@@ -38,16 +38,11 @@ function(rw_generate_rpe)
     DEPENDS "${_input}"
             "${PLUGIN_DIR}/rpplugin.h"
             "${PLUGIN_DIR}/rperror.def"
-            "${RW_GEN_INCDIR}/rwversion.h"
-            "${RW_GEN_INCDIR}/rpcriter.h"
-            "${RW_GEN_INCDIR}/rperror.h"
-            "${RW_GEN_INCDIR}/rwplcore.h"
-            "${RW_GEN_INCDIR}/rwcore.h"
     COMMENT "Generating ${PLUGIN}.rpe"
     VERBATIM)
   rw_record_output(RW_HEADER_OUTPUT_FILES "${_out}")
   add_custom_target("${NAME}" DEPENDS "${_out}")
-  rw_record_output(RW_HEADER_TARGETS "${NAME}")
+  add_dependencies(rw-headers "${NAME}")
   set(RW_RPE_OUTPUT "${_out}" PARENT_SCOPE)
 endfunction()
 
@@ -110,7 +105,7 @@ function(rw_generate_incgen_header)
     VERBATIM)
   rw_record_output(RW_HEADER_OUTPUT_FILES "${OUTPUT}")
   add_custom_target("${NAME}" DEPENDS "${OUTPUT}")
-  rw_record_output(RW_HEADER_TARGETS "${NAME}")
+  add_dependencies(rw-headers "${NAME}")
   set(RW_INCGEN_OUTPUT "${OUTPUT}" PARENT_SCOPE)
 endfunction()
 
@@ -133,7 +128,7 @@ function(rw_generate_inline_header)
     VERBATIM)
   rw_record_output(RW_HEADER_OUTPUT_FILES "${OUTPUT}")
   add_custom_target("${NAME}" DEPENDS "${OUTPUT}")
-  rw_record_output(RW_HEADER_TARGETS "${NAME}")
+  add_dependencies(rw-headers "${NAME}")
   set(RW_INLINE_OUTPUT "${OUTPUT}" PARENT_SCOPE)
 endfunction()
 
@@ -153,7 +148,7 @@ function(rw_copy_generated_file)
     VERBATIM)
   rw_record_output(RW_HEADER_OUTPUT_FILES "${OUTPUT}")
   add_custom_target("${NAME}" DEPENDS "${OUTPUT}")
-  rw_record_output(RW_HEADER_TARGETS "${NAME}")
+  add_dependencies(rw-headers "${NAME}")
   set(RW_COPY_OUTPUT "${OUTPUT}" PARENT_SCOPE)
 endfunction()
 
@@ -193,7 +188,7 @@ function(rw_generate_equate)
     VERBATIM)
   rw_record_output(RW_EQUATE_OUTPUT_FILES "${_out}")
   add_custom_target(rw-equate-step DEPENDS "${_out}")
-  rw_record_output(RW_EQUATE_TARGETS rw-equate-step)
+  add_dependencies(rw-equate rw-equate-step)
   set(RW_EQUATE_OUTPUT "${_out}" PARENT_SCOPE)
 endfunction()
 
@@ -213,6 +208,6 @@ function(rw_copy_core_headers)
       VERBATIM)
     rw_record_output(RW_HEADER_OUTPUT_FILES "${_out}")
     add_custom_target("rw-corehdr-${_f}" DEPENDS "${_out}")
-    rw_record_output(RW_HEADER_TARGETS "rw-corehdr-${_f}")
+    add_dependencies(rw-headers "rw-corehdr-${_f}")
   endforeach()
 endfunction()

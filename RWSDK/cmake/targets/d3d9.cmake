@@ -42,5 +42,10 @@ set(RW_DRV_INC
 set(RW_DRV_DEF "")
 
 # d3dx9 (legacy DirectX SDK utility library) is required by rpworld for the
-# D3D9 pipeline (vertex declaration/shader utilities).
+# D3D9 pipeline (vertex declaration/shader utilities). Static builds archive
+# it with rpworld; DLL builds defer it to the DLL link.
 set(RW_WORLD_LIBS "${RW_DXSDK_LIB}/d3dx9.lib")
+if(RW_DLL)
+  list(APPEND RW_DLL_DRV_LIBS "${RW_DXSDK_LIB}/d3dx9.lib")
+  set(RW_WORLD_LIBS "")
+endif()

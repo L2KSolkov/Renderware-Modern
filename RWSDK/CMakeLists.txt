@@ -24,6 +24,11 @@ message(STATUS "Using compiler - ${RW_COMPILER}")
 message(STATUS "Using operating system - ${RW_OS}")
 message(STATUS "")
 
+# `make header` / `make equate` equivalents, defined early so subdirectories
+# can add_dependencies onto them.
+add_custom_target(rw-headers)
+add_custom_target(rw-equate)
+
 add_subdirectory(buildtools)
 
 add_subdirectory(src)
@@ -46,15 +51,6 @@ endif()
 if(RW_DLL)
   add_subdirectory(dllsrc)
 endif()
-
-##------------------------------------------------------------ aggregates
-# `make header` / `make equate` equivalents.
-get_property(_rw_hdr_files GLOBAL PROPERTY RW_HEADER_OUTPUT_FILES)
-get_property(_rw_eq_files GLOBAL PROPERTY RW_EQUATE_OUTPUT_FILES)
-get_property(_rw_hdr_targets GLOBAL PROPERTY RW_HEADER_TARGETS)
-get_property(_rw_eq_targets GLOBAL PROPERTY RW_EQUATE_TARGETS)
-add_custom_target(rw-headers DEPENDS ${_rw_hdr_targets})
-add_custom_target(rw-equate DEPENDS ${_rw_eq_targets})
 
 ##---------------------------------------------------------- docs / QA
 if(RW_BUILD_DOCS)

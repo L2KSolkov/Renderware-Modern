@@ -57,6 +57,8 @@ set(RW_RPWORLD_HDR "${RW_GEN_INCDIR}/rpworld.h")
 rw_generate_rpe(NAME rpworld_rpe PLUGIN_DIR "${RW_WORLD}" PLUGIN rpworld)
 set(RW_RPWORLD_RPE "${RW_GEN_INCDIR}/rpworld.rpe")
 
+add_custom_target(rw-world-headers DEPENDS rpworld_h rpworld_rpe)
+
 add_library(rpworld STATIC ${RPWORLD_SRCS})
 rw_setup_target(rpworld)
 target_include_directories(rpworld PRIVATE ${RW_WORLD_PIPE_INC})
@@ -65,6 +67,7 @@ if(NOT RW_DLL AND RW_WORLD_LIBS)
 endif()
 set_target_properties(rpworld PROPERTIES
   OUTPUT_NAME "${RW_LIB_PREFIX}rpworld${RW_LIB_SUFFIX}")
+add_dependencies(rpworld rw-headers)
 target_sources(rpworld PRIVATE
   "${RW_GEN_INCDIR}/rpworld.h"
   "${RW_GEN_INCDIR}/rpworld.rpe")

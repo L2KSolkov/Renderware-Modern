@@ -18,16 +18,27 @@ string(REPLACE "\n" ";" _lines "${_dumpbin}")
 
 set(_exports "")
 foreach(_line IN LISTS _lines)
-  # symbol names in /LINKERMEMBER output follow the '|' separator
-  string(FIND "${_line}" "|" _bar)
-  if(_bar EQUAL -1)
+  # /LINKERMEMBER:1 emits one line per symbol: "<offset> <name>"
+  if(NOT _line MATCHES "^[ \t]*[0-9A-Fa-f]+[ \t]+(.+)$")
     continue()
   endif()
-  string(SUBSTRING "${_line}" 0 ${_bar} _prefix)
-  string(SUBSTRING "${_line}" ${_bar} -1 _rest)
-  string(REGEX REPLACE "^\\| *" "" _name "${_rest}")
+  set(_name "${CMAKE_MATCH_1}")
   string(STRIP "${_name}" _name)
   if(_name STREQUAL "")
+    continue()
+  endif()
+  # "N public symbols" style summary lines
+  if(_name MATCHES " ")
+    continue()
+  endif()
+  # section-name pseudo symbols (.text, .data, .bss, ...)
+  string(SUBSTRING "${_name}" 0 1 _first)
+  if(_first STREQUAL ".")
+    continue()
+  endif()
+  # archive member header fields from dumpbin output (uid, gid, mode, size)
+  if(_name STREQUAL "mode" OR _name STREQUAL "size" OR
+     _name STREQUAL "uid" OR _name STREQUAL "gid")
     continue()
   endif()
   # /\_real@\([0-9a-fA-f]\)/d  (note the original regex character class)
@@ -35,12 +46,28 @@ foreach(_line IN LISTS _lines)
     continue()
   endif()
   # /\"/d
-  string(SUBSTRING "${_name}" 0 1 _first)
   if(_first STREQUAL "\"")
     continue()
   endif()
   # /AVexception/d /length_error/d /logic_error/d /out_of_range/d
   if(_name MATCHES "AVexception|length_error|logic_error|out_of_range")
+    continue()
+  endif()
+  # compiler-generated artifacts that are not exportable API symbols:
+  # XMM constant data, RTTI catch/type-info descriptors
+  if(_name MATCHES "_xmm@" OR _name MATCHES "^_?_?CT" OR
+     _name MATCHES "^_?_?CTA[0-9]" OR _name MATCHES "^_?_?TI[0-9]" OR
+     _name MATCHES "^_?_?R0\\?")
+    continue()
+  endif()
+  # dlltool --export-all-symbols emits undecorated names for i386 COFF: one
+  # leading underscore is stripped and the linker re-adds it when matching.
+  if(_name MATCHES "^_")
+    string(SUBSTRING "${_name}" 1 -1 _name)
+  endif()
+  # MASM segment pseudo-symbols from the driver .asm sources are not
+  # exportable API symbols (dlltool would not have exported them either).
+  if(_name STREQUAL "rwcseg" OR _name STREQUAL "rwdseg")
     continue()
   endif()
   list(APPEND _exports "${_name}")

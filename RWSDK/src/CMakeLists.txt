@@ -141,23 +141,40 @@ rw_generate_incgen_header(NAME rwcore_h
   SYS rwplcore)
 set(RW_CORE_HDR "${RW_GEN_INCDIR}/rwcore.h")
 
+add_custom_target(rw-core-headers DEPENDS
+  rw-corehdr-rwversion.h
+  rw-corehdr-rpcriter.h
+  rw-corehdr-rpdbgerr.c
+  rw-corehdr-rpdbgerr.h
+  rw-corehdr-rperror.h
+  rw-corehdr-errcom.def
+  rw-corehdr-errcore.def
+  rwplcore_h
+  rwcore_h)
+
 ##-------------------------------------------------------------- equate
 rw_generate_equate()
 
 ##------------------------------------------------------------ libraries
-add_library(rwplcore_obj OBJECT
-  ${PLCORE_SRCS}
-  ${PLCORE_INIT_SRC}
-  ${STUB_DRV_SRC})
+# PLCOREOBJ (makecore) = the 18 plcore objects plus osintf; these objects are
+# archived into BOTH rwplcore.lib and rwcore.lib. baplcore.c and sbdevice.c
+# go into rwplcore.lib only, so the two archives do not duplicate the engine
+# globals (RwEngineInit etc. live in baplcore.c).
+add_library(rwplcore_obj OBJECT ${PLCORE_SRCS})
 rw_setup_target(rwplcore_obj)
 target_include_directories(rwplcore_obj PRIVATE ${RW_PIPE_INC})
+add_dependencies(rwplcore_obj rw-headers)
 target_sources(rwplcore_obj PRIVATE
   "${RW_GEN_INCDIR}/rwplcore.h"
   "${RW_GEN_INCDIR}/rwcore.h")
 
-add_library(rwplcore STATIC $<TARGET_OBJECTS:rwplcore_obj>)
+add_library(rwplcore STATIC
+  $<TARGET_OBJECTS:rwplcore_obj>
+  ${PLCORE_INIT_SRC}
+  ${STUB_DRV_SRC})
 rw_setup_target(rwplcore)
 target_include_directories(rwplcore PRIVATE ${RW_PIPE_INC})
+add_dependencies(rwplcore rw-headers)
 set_target_properties(rwplcore PROPERTIES
   OUTPUT_NAME "${RW_LIB_PREFIX}rwplcore${RW_LIB_SUFFIX}")
 target_sources(rwplcore PRIVATE
@@ -179,6 +196,7 @@ add_library(rwcore STATIC
   ${RW_CORE_ASM_SRC})
 rw_setup_target(rwcore)
 target_include_directories(rwcore PRIVATE ${RW_PIPE_INC})
+add_dependencies(rwcore rw-headers)
 target_link_libraries(rwcore PRIVATE ${RW_DRV_LIBS})
 set_target_properties(rwcore PROPERTIES
   OUTPUT_NAME "${RW_LIB_PREFIX}rwcore${RW_LIB_SUFFIX}")

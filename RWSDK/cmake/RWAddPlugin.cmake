@@ -32,15 +32,27 @@ function(rw_add_plugin NAME)
     set(_implicit "${_dir}/${P_PLUGIN}.cpp")
   endif()
 
-  # per-target source selection: $(RWTARGET)CSRC falls back to genericCSRC
+  # per-target source selection: $(RWTARGET)CSRC falls back to genericCSRC.
+  # The "target=file1;file2" entries arrive pre-split (quoted semicolons are
+  # list separators), so reconstruct them: a "key=value" arg starts a list and
+  # the following bare path args are its continuation.
   set(_selected ${P_GENERIC_SOURCES})
+  set(_cur_target "")
+  set(_cur_files "")
   foreach(_entry IN LISTS P_TARGET_SOURCES)
     if(_entry MATCHES "^([A-Za-z0-9_]+)=(.*)$")
-      if(RW_TARGET STREQUAL CMAKE_MATCH_1)
-        set(_selected ${CMAKE_MATCH_2})
+      if(NOT _cur_target STREQUAL "" AND RW_TARGET STREQUAL _cur_target)
+        set(_selected ${_cur_files})
       endif()
+      set(_cur_target "${CMAKE_MATCH_1}")
+      set(_cur_files "${CMAKE_MATCH_2}")
+    else()
+      list(APPEND _cur_files "${_entry}")
     endif()
   endforeach()
+  if(NOT _cur_target STREQUAL "" AND RW_TARGET STREQUAL _cur_target)
+    set(_selected ${_cur_files})
+  endif()
 
   set(_srcs ${_implicit} ${P_SOURCES} ${_selected})
   if(RW_DEBUG)
@@ -59,6 +71,9 @@ function(rw_add_plugin NAME)
   target_compile_definitions(${NAME} PRIVATE ${P_EXTRA_DEFINES})
   set_target_properties(${NAME} PROPERTIES
     OUTPUT_NAME "${RW_LIB_PREFIX}${P_LIBNAME}${RW_LIB_SUFFIX}")
+  # Generated headers (core, world, other plugins/toolkits) live in other
+  # projects; force the ordering even for partial (single-target) builds.
+  add_dependencies(${NAME} rw-headers)
 
   set(_rpe "${RW_GEN_INCDIR}/${P_PLUGIN}.rpe")
   set(_hdr "${RW_GEN_INCDIR}/${P_PLUGIN}.h")

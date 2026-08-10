@@ -85,6 +85,7 @@ add_custom_command(OUTPUT "${_def}"
           "-DRW_DEF_OUTPUT=${_def}"
           -P "${RW_SRC_ROOT}/cmake/rw-gendef.cmake"
   DEPENDS ${_dlllibs}
+          "${RW_SRC_ROOT}/cmake/rw-gendef.cmake"
   COMMENT "Generating ${_rwgdllname}.def from archive symbols"
   VERBATIM)
 
@@ -94,9 +95,13 @@ if(CMAKE_RC_COMPILER)
     COMMAND "${CMAKE_RC_COMPILER}"
             /nologo
             "/i${RW_GEN_INCDIR}"
+            "/i${RW_SRC_ROOT}/dllsrc"
+            "/dLANG_ENGLISH=0x09"
+            "/dSUBLANG_ENGLISH_UK=0x02"
             "/d$<$<CONFIG:Debug>:_DEBUG:NDEBUG>"
             "/fo${_rc_out}"
             "${RW_SRC_ROOT}/dllsrc/rwgdll.rc"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     DEPENDS "${RW_SRC_ROOT}/dllsrc/rwgdll.rc"
             "${RW_SRC_ROOT}/dllsrc/resource.h"
             "${RW_GEN_INCDIR}/rwversion.h"
@@ -118,19 +123,72 @@ elseif(RW_TARGET STREQUAL "d3d9")
   list(APPEND _target_deps gdi32 advapi32)
 endif()
 
-set(_rtlib "$<$<CONFIG:Debug>:MSVCRTd.lib>")
-string(APPEND _rtlib "$<$<NOT:$<CONFIG:Debug>>:MSVCRT.lib>")
+# The static libraries are compiled with /Zl (as makecom does), so the DLL
+# link must name the CRT import libraries explicitly. Locate the toolchain's
+# x86 lib dir from the compiler path and the UCRT dir from the Windows Kits.
+get_filename_component(_cl_bin "${CMAKE_C_COMPILER}" DIRECTORY)
+get_filename_component(_cl_host "${_cl_bin}" DIRECTORY)
+get_filename_component(_cl_bin_root "${_cl_host}" DIRECTORY)
+get_filename_component(RW_VC_LIBDIR "${_cl_bin_root}" DIRECTORY)
+set(RW_VC_LIBDIR "${RW_VC_LIBDIR}/lib/x86")
+if(NOT EXISTS "${RW_VC_LIBDIR}/vcruntime.lib")
+  message(FATAL_ERROR "Cannot locate the MSVC x86 lib dir (expected ${RW_VC_LIBDIR})")
+endif()
+
+set(_kits_root "C:/Program Files (x86)/Windows Kits/10/Lib")
+if(DEFINED ENV{UniversalCRTSdkDir})
+  set(_kits_root "$ENV{UniversalCRTSdkDir}/Lib")
+endif()
+file(GLOB _ucrt_candidates "${_kits_root}/*/ucrt/x86/ucrt.lib")
+list(LENGTH _ucrt_candidates _n)
+if(NOT _n EQUAL 0)
+  list(GET _ucrt_candidates 0 RW_UCRT_LIB)
+else()
+  set(RW_UCRT_LIB "ucrt.lib")
+  message(WARNING
+    "ucrt.lib not found under ${_kits_root}; relying on the LIB environment "
+    "at link time for the UCRT import library.")
+endif()
+
+set(_rt_debug
+    "${RW_VC_LIBDIR}/vcruntimed.lib"
+    "${RW_VC_LIBDIR}/msvcprtd.lib"
+    "${RW_VC_LIBDIR}/msvcrtd.lib"
+    "${RW_UCRT_LIB}")
+set(_rt_release
+    "${RW_VC_LIBDIR}/vcruntime.lib"
+    "${RW_VC_LIBDIR}/msvcprt.lib"
+    "${RW_VC_LIBDIR}/msvcrt.lib"
+    "${RW_UCRT_LIB}")
 
 add_library(rwgdll SHARED
   rwgdllep.c
   "${_rc_out}"
-  ${_lib_paths})
+  "${_def}")
 rw_setup_target(rwgdll)
 set_target_properties(rwgdll PROPERTIES
   OUTPUT_NAME "${_rwgdllname}"
   PREFIX "")
 target_link_options(rwgdll PRIVATE
-  /dll /fixed:no /largeaddressaware /incremental:no "/def:${_def}")
-target_link_libraries(rwgdll PRIVATE ${_target_deps} "${_rtlib}")
+  /dll /fixed:no /largeaddressaware /incremental:no)
+foreach(_lib IN LISTS _dlllibs)
+  # Modern link.exe does not pull archive members merely to satisfy .def
+  # exports (the VS2003-era linker the make system targeted did). WHOLEARCHIVE
+  # makes every member available so the dlltool-style export-all .def links.
+  # link.exe requires native (backslash) paths in this option, so build the
+  # archive path manually instead of using $<TARGET_FILE>.
+  get_target_property(_lib_srcdir "${_lib}" SOURCE_DIR)
+  get_target_property(_lib_outname "${_lib}" OUTPUT_NAME)
+  file(RELATIVE_PATH _lib_rel "${RW_SRC_ROOT}" "${_lib_srcdir}")
+  set(_wa_path
+      "${CMAKE_BINARY_DIR}/${_lib_rel}/$<CONFIG>/${_lib_outname}.lib")
+  string(REPLACE "/" "\\" _wa_path "${_wa_path}")
+  target_link_options(rwgdll PRIVATE "/WHOLEARCHIVE:${_wa_path}")
+endforeach()
+target_link_libraries(rwgdll PRIVATE
+  ${_dlllibs}
+  ${_target_deps}
+  "$<$<CONFIG:Debug>:${_rt_debug}>"
+  "$<$<NOT:$<CONFIG:Debug>>:${_rt_release}>")
 
 set(RW_DLL_TARGET rwgdll PARENT_SCOPE)

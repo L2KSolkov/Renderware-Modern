@@ -1,6 +1,5 @@
 ﻿$ref = "D:\RW_372_src\reference\generated-headers-3.7.2"
 $got = "D:\RW_372_src\build-d3d9\include\d3d9"
-
 function Normalize($text) {
     $lines = $text -split "`r?`n"
     $out = New-Object System.Collections.Generic.List[string]
@@ -12,7 +11,6 @@ function Normalize($text) {
     }
     return ($out -join "`n")
 }
-
 $mismatch = @()
 foreach ($rf in Get-ChildItem -LiteralPath $ref -File) {
     $gf = Join-Path $got $rf.Name
@@ -21,5 +19,5 @@ foreach ($rf in Get-ChildItem -LiteralPath $ref -File) {
     $g = Normalize ((Get-Content -LiteralPath $gf -Raw))
     if ($r -cne $g) { $mismatch += "DIFF: $($rf.Name)" }
 }
-Write-Output "mismatches: $($mismatch.Count)"
-$mismatch | Select-Object -First 40
+Write-Output "parity mismatches: $($mismatch.Count)"
+$mismatch | Select-Object -First 10
