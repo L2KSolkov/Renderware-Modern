@@ -1,0 +1,15 @@
+/build*/
+out/
+.vs/
+CMakeUserPresets.json
+RWSDK/lib/
+RWSDK/include/
+RWSDK/dll/
+RWSDK/obj/
+RWSDK/dep/
+RWSDK/autodocs/
+*.user
+*.suo
+*.sdf
+*.ncb
+*.aps

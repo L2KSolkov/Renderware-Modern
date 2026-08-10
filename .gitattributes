@@ -1,0 +1,7 @@
+* text=auto eol=crlf
+*.exe -text
+*.dll -text
+*.pdf -text
+*.chm -text
+*.sit -text
+*.pdx -text
