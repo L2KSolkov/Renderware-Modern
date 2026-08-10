@@ -181,6 +181,33 @@ the configure banner (`Building RenderWare target - ...`, `Using compiler -
 | `RW_SDK_LIBDIR` / `RW_SDK_DLLDIR` / `RW_SDK_INCDIR` | The make-style output locations under `RWSDK/` (used for install). |
 | `RW_INSTALL_PREFIX` | Where `cmake --install` writes the layout; defaults to the SDK root (`RWSDK/`), reproducing `lib/`, `include/`, `dll/` next to the sources. |
 
+## Example options (separate surface)
+
+When the root superbuild (or standalone `examples/`) is configured, the
+examples use their own `RW_EXAMPLES_*` cache variables instead of the SDK
+ones; the SDK's `RW_TARGET`/`RW_DEBUG`/`RW_METRICS`/`RW_CDEBUG`/... options
+do not affect them. The examples still require the SDK: the superbuild adds
+`RWSDK/` first and every example links its targets, while standalone mode
+`find_package(RenderWare REQUIRED)`s an installed package.
+
+| Variable | Default | Effect |
+|---|---|---|
+| `RW_EXAMPLES` | empty | Semicolon list of example directories to build; empty = all 66 |
+| `RW_EXAMPLES_TARGET` | the SDK's `RW_TARGET` | Target the examples build for; configure fails in-tree if it does not match the SDK |
+| `RW_EXAMPLES_LOGO` | ON | `RWLOGO` define and `rplogo` link |
+| `RW_EXAMPLES_SPLASH` | OFF | `RWSPLASH` define and `vfw32` link |
+| `RW_EXAMPLES_STAGE_ASSETS` | ON | Copy each example's asset dirs beside its executable |
+| `RW_EXAMPLES_DEBUG` | AUTO | `AUTO` = `Debug` config; debug flags (`/Od /Ob0 /Oy- /Zi /D_DEBUG /MTd`) and `d` executable suffix |
+| `RW_EXAMPLES_PROFILE` | AUTO | `AUTO` = `RelWithDebInfo` config; profiling flags and `p` suffix |
+| `RW_EXAMPLES_MSWST` | OFF | Working Set Tuner flag set and `wst` suffix |
+| `RW_EXAMPLES_METRICS` | OFF | `RWMETRICS` define, compiles `vecfont.c`/`metrics.c`, `m` suffix |
+| `RW_EXAMPLES_OPTIMIZE` | AUTO | Optimize example code (`/O2 /Ob2`); `AUTO` = off for debug/profile/MSWST |
+
+`RW_EXAMPLES_DEBUG` does not define `RWDEBUG` (that define changes the SDK
+header ABI and stays in the SDK's domain); it only selects example compile
+flags and the `d` suffix. Each example owns a `CMakeLists.txt` in its own
+directory and `RW_EXAMPLES` selects them by directory name.
+
 ## Configure-time validation
 
 - x64 (`-A x64`): rejected with a fatal error - the MASM sources and the

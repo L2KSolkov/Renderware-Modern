@@ -1,41 +1,11 @@
-# The seven tutorials, same shape as the demos.
+# The seven tutorials, each with its own CMakeLists.txt in its directory.
+# RW_EXAMPLES accepts the TutorialN directory names to select a subset.
 
-rw_add_example(Tutorial1
-  DEMO tutorial1
-  SOURCES src/main.c src/win/events.c
-  ASSET_DIRS models)
+set(RW_TUTORIAL_DIRS Tutorial1 Tutorial2 Tutorial3 Tutorial4 Tutorial5
+    Tutorial6 Tutorial7)
 
-rw_add_example(Tutorial2
-  DEMO tutorial2
-  SOURCES src/main.c src/utils.c src/win/events.c
-  ASSET_DIRS models)
-
-rw_add_example(Tutorial3
-  DEMO tutorial3
-  SOURCES src/main.c src/utils.c src/win/events.c
-  RW_LIBS rtintsec rtpick rpcollis
-  ASSET_DIRS models)
-
-rw_add_example(Tutorial4
-  DEMO tutorial4
-  SOURCES src/main.c src/utils.c src/win/events.c
-  RW_LIBS rtintsec rtpick rpcollis
-  ASSET_DIRS models)
-
-rw_add_example(Tutorial5
-  DEMO tutorial5
-  SOURCES src/main.c src/utils.c src/RpAName.c src/win/events.c
-  RW_LIBS rtintsec rtpick rpcollis
-  ASSET_DIRS models)
-
-rw_add_example(Tutorial6
-  DEMO tutorial6
-  SOURCES src/main.c src/utils.c src/RpAName.c src/win/events.c
-  RW_LIBS rtintsec rtpick rpcollis
-  ASSET_DIRS models)
-
-rw_add_example(Tutorial7
-  DEMO tutorial7
-  SOURCES src/main.c src/utils.c src/RpAName.c src/win/events.c
-  RW_LIBS rtintsec rtpick rpcollis rttoc
-  ASSET_DIRS models)
+foreach(_dir IN LISTS RW_TUTORIAL_DIRS)
+  if(NOT RW_EXAMPLES OR _dir IN_LIST RW_EXAMPLES)
+    add_subdirectory("${_dir}")
+  endif()
+endforeach()

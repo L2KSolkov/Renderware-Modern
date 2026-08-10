@@ -39,13 +39,18 @@ cmake --preset win32-d3d9-release
 cmake --build --preset win32-d3d9-release
 ```
 
-- Each example is `rw_add_example()` in `examples/CMakeLists.txt` and links
-  the shared `rwskel` framework (`shared/`), which provides the `Rs*`
-  skeleton, the Win32 device-selection dialog (`win.rc`), camera/menu helpers
-  and the baseline RenderWare libraries.
+- Every example owns its CMake file in its own directory
+  (`examples/<name>/CMakeLists.txt`, tutorials under `examples/Tutorials/`).
+  `examples/CMakeLists.txt` just adds the selected directories; each one
+  calls `rw_add_example()` and links the shared `rwskel` framework
+  (`shared/`), which provides the `Rs*` skeleton, the Win32 device-selection
+  dialog (`win.rc`), camera/menu helpers and the baseline RenderWare
+  libraries.
+- `RW_EXAMPLES` selects a subset by directory name
+  (`-DRW_EXAMPLES="camera;hanim1;Tutorial3"`); empty means all 66.
 - Executable names match the original build: `<demo>_<target>[suffix].exe`
-  (`camera_d3d9.exe`, `camera_d3d9d.exe` under `RW_DEBUG=ON`,
-  `camera_d3d9m.exe` under `RW_METRICS=ON`).
+  (`camera_d3d9.exe`, `camera_d3d9d.exe` under `RW_EXAMPLES_DEBUG=ON`,
+  `camera_d3d9m.exe` under `RW_EXAMPLES_METRICS=ON`).
 - Assets are staged beside each executable when `RW_EXAMPLES_STAGE_ASSETS`
   (default ON); `VS_DEBUGGER_WORKING_DIRECTORY` points at the staging dir.
 - `RW_EXAMPLES_LOGO` (default ON) defines `RWLOGO` and links `rplogo`;
@@ -74,6 +79,33 @@ SDK: `shared/skel/skeleton.c` now calls the 4-argument (threaded-lock)
 `RwEngineInit`, and the four `RpHAnimRemove*` animation-compression helpers
 (present in the official 3.7 SDK headers but absent from this drop's hanim
 sources) were implemented in `RWSDK/plugin/hanim/hanimopt.c`.
+
+### Example options are separate from the SDK options
+
+The examples carry their own `RW_EXAMPLES_*` option surface
+(`examples/cmake/RWExampleOptions.cmake`); the SDK's `RW_TARGET`,
+`RW_DEBUG`, `RW_METRICS`, `RW_CDEBUG`, ... cache options do not affect them
+and vice versa. The only coupling is that the examples link the SDK targets,
+so the superbuild configures `RWSDK/` first and every example (and `rwskel`)
+depends on the SDK libraries. Standalone mode requires an installed package
+via `find_package(RenderWare REQUIRED)`.
+
+| Example option | Default | Effect |
+|---|---|---|
+| `RW_EXAMPLES` | empty | Semicolon list of example directories to build; empty = all |
+| `RW_EXAMPLES_TARGET` | SDK `RW_TARGET` | Target the examples build for; validated to match the SDK in-tree |
+| `RW_EXAMPLES_LOGO` | ON | `RWLOGO` define + `rplogo` link |
+| `RW_EXAMPLES_SPLASH` | OFF | `RWSPLASH` define + `vfw32` link |
+| `RW_EXAMPLES_STAGE_ASSETS` | ON | Copy assets beside each executable |
+| `RW_EXAMPLES_DEBUG` | AUTO (`Debug` config) | Debug compile flags, `/MTd`, `d` suffix |
+| `RW_EXAMPLES_PROFILE` | AUTO (`RelWithDebInfo` config) | Profiling flags, `p` suffix |
+| `RW_EXAMPLES_MSWST` | OFF | Working Set Tuner flags, `wst` suffix |
+| `RW_EXAMPLES_METRICS` | OFF | `RWMETRICS` define + metrics overlay, `m` suffix |
+| `RW_EXAMPLES_OPTIMIZE` | AUTO | Optimize example code; AUTO = off for debug/profile/MSWST |
+
+Note that `RW_EXAMPLES_DEBUG` deliberately does not define `RWDEBUG`: that
+define changes the SDK public-header ABI (e.g. `RwMatrixGetRight` becomes an
+extern function in the SDK libraries) and belongs to the SDK's option domain.
 
 Presets: `win32-d3d9-debug`, `win32-d3d9-release`, `win32-d3d8-release`,
 `win32-opengl-release`, `win32-null-release`, `win32-d3d9-metrics`,

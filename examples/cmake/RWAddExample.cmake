@@ -1,16 +1,16 @@
-# rw_add_example() - analogue of shared/maketarg, mirroring the SDK's
-# rw_add_plugin() argument-parsing idiom.
+# rw_add_example() - analogue of shared/maketarg.
 #
 #   rw_add_example(camera
 #     SOURCES        src/main.c src/camexamp.c src/viewer.c src/win/events.c
 #     RW_LIBS        rtpng rtbmp
 #     ASSET_DIRS     models)
 #
-# Sources are relative to the example directory. TARGET_SOURCES entries
+# Sources are relative to the example directory (the directory owning this
+# CMakeLists.txt). TARGET_SOURCES entries
 # ("target=file1;file2", reconstructed because quoted semicolons are list
 # separators) select per-render-target sources, e.g. vshader's D3D8/D3D9
 # variants. SUPPORTED_TARGETS restricts an example to specific targets and
-# prints a configure-time skip otherwise (normmap/vshader/pshader/imshadow).
+# prints a configure-time skip otherwise.
 
 function(rw_add_example NAME)
   cmake_parse_arguments(X
@@ -31,7 +31,7 @@ function(rw_add_example NAME)
     endif()
   endif()
 
-  set(_dir "${CMAKE_CURRENT_SOURCE_DIR}/${NAME}")
+  set(_dir "${CMAKE_CURRENT_SOURCE_DIR}")
 
   # per-target source selection
   set(_selected "")
@@ -61,19 +61,10 @@ function(rw_add_example NAME)
   endforeach()
 
   add_executable(${NAME} ${_srcs})
-  rw_setup_target(${NAME} NO_ZL)
+  rw_setup_example_target(${NAME})
   target_include_directories(${NAME} PRIVATE "${_dir}/src")
-  target_compile_definitions(${NAME} PRIVATE
-    "RWTARGET_${RW_PLATFORMEXE}")
-  if(RW_EXAMPLES_LOGO)
-    target_compile_definitions(${NAME} PRIVATE RWLOGO)
+  if(RW_EXAMPLES_LOGO AND NOT "rplogo" IN_LIST X_RW_LIBS)
     list(APPEND X_RW_LIBS rplogo)
-  endif()
-  if(RW_EXAMPLES_SPLASH)
-    target_compile_definitions(${NAME} PRIVATE RWSPLASH)
-  endif()
-  if(RW_METRICS)
-    target_compile_definitions(${NAME} PRIVATE RWMETRICS)
   endif()
 
   # The framework resource (device-selection dialog) must be linked into
@@ -87,16 +78,16 @@ function(rw_add_example NAME)
   foreach(_lib IN LISTS X_RW_LIBS)
     target_link_libraries(${NAME} PRIVATE "${RW_EXAMPLE_LIB_PREFIX}${_lib}")
   endforeach()
+  # The skeleton is a Win32 GUI app (WinMain, windows subsystem) and needs
+  # winmm for timeGetTime in win.c.
+  target_link_libraries(${NAME} PRIVATE winmm)
   if(RW_EXAMPLES_SPLASH)
     target_link_libraries(${NAME} PRIVATE vfw32)
   endif()
-  # makecom SYSLIBS: the examples need winmm (timeGetTime in win.c) and are
-  # Win32 GUI apps (WinMain, windows subsystem).
-  target_link_libraries(${NAME} PRIVATE winmm)
 
   # <demo>_<platform>[suffix].exe, e.g. camera_d3d9.exe / camera_d3d9d.exe
   set_target_properties(${NAME} PROPERTIES
-    OUTPUT_NAME "${X_DEMO}_${RW_PLATFORMEXE}${RW_EXE_SUFFIX}")
+    OUTPUT_NAME "${X_DEMO}_${RW_EXAMPLES_PLATFORMEXE}${RW_EXAMPLES_EXE_SUFFIX}")
   set_target_properties(${NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
 
   set_target_properties(${NAME} PROPERTIES

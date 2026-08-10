@@ -1,5 +1,6 @@
 # rwskel: the shared Rs* skeleton framework, replacing the per-example
-# compiles of shared/maketarg. Every example links this library.
+# compiles of shared/maketarg. Every example links this library. It is
+# compiled with the example option surface (RW_EXAMPLES_*), not the SDK's.
 
 set(RW_SKEL "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -8,7 +9,7 @@ set(_skel_srcs
     "${RW_SKEL}/skel/win/win.c"
     "${RW_SKEL}/democom/camera.c"
     "${RW_SKEL}/democom/menu.c")
-if(RW_METRICS)
+if(RW_EXAMPLES_METRICS)
   list(APPEND _skel_srcs
     "${RW_SKEL}/skel/vecfont.c"
     "${RW_SKEL}/skel/metrics.c")
@@ -18,7 +19,7 @@ if(RW_EXAMPLES_SPLASH)
 endif()
 
 add_library(rwskel STATIC ${_skel_srcs})
-rw_setup_target(rwskel)
+rw_setup_example_target(rwskel)
 target_include_directories(rwskel PUBLIC
     "${RW_SKEL}/skel"
     "${RW_SKEL}/skel/win"
@@ -33,3 +34,6 @@ target_link_libraries(rwskel PUBLIC
     "${RW_EXAMPLE_LIB_PREFIX}rppatch")
 set_target_properties(rwskel PROPERTIES
     OUTPUT_NAME "rwskel")
+if(TARGET rw-headers)
+  add_dependencies(rwskel rw-headers)
+endif()
