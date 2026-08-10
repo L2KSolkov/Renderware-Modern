@@ -1,0 +1,115 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base-win32",
+      "displayName": "Win32 base",
+      "architecture": "Win32",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "RW_OS": "win",
+        "RW_DXSDK_DIR": "$env{DXSDK_DIR}"
+      }
+    },
+    {
+      "name": "win32-d3d9-debug",
+      "inherits": "base-win32",
+      "displayName": "Win32 d3d9 Debug",
+      "cacheVariables": {
+        "RW_TARGET": "d3d9"
+      }
+    },
+    {
+      "name": "win32-d3d9-release",
+      "inherits": "base-win32",
+      "displayName": "Win32 d3d9 Release",
+      "cacheVariables": {
+        "RW_TARGET": "d3d9"
+      }
+    },
+    {
+      "name": "win32-d3d8-release",
+      "inherits": "base-win32",
+      "displayName": "Win32 d3d8 Release (requires legacy DX SDK)",
+      "cacheVariables": {
+        "RW_TARGET": "d3d8"
+      }
+    },
+    {
+      "name": "win32-opengl-release",
+      "inherits": "base-win32",
+      "displayName": "Win32 OpenGL Release",
+      "cacheVariables": {
+        "RW_TARGET": "opengl"
+      }
+    },
+    {
+      "name": "win32-null-release",
+      "inherits": "base-win32",
+      "displayName": "Win32 null Release",
+      "cacheVariables": {
+        "RW_TARGET": "null"
+      }
+    },
+    {
+      "name": "win32-d3d9-metrics",
+      "inherits": "base-win32",
+      "displayName": "Win32 d3d9 metrics",
+      "cacheVariables": {
+        "RW_TARGET": "d3d9",
+        "RW_METRICS": "ON"
+      }
+    },
+    {
+      "name": "win32-d3d9-dll",
+      "inherits": "base-win32",
+      "displayName": "Win32 d3d9 amalgamated DLL",
+      "cacheVariables": {
+        "RW_TARGET": "d3d9",
+        "RW_DLL": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "win32-d3d9-debug",
+      "configurePreset": "win32-d3d9-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "win32-d3d9-release",
+      "configurePreset": "win32-d3d9-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "win32-d3d8-release",
+      "configurePreset": "win32-d3d8-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "win32-opengl-release",
+      "configurePreset": "win32-opengl-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "win32-null-release",
+      "configurePreset": "win32-null-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "win32-d3d9-metrics",
+      "configurePreset": "win32-d3d9-metrics",
+      "configuration": "Release"
+    },
+    {
+      "name": "win32-d3d9-dll",
+      "configurePreset": "win32-d3d9-dll",
+      "configuration": "Release"
+    }
+  ]
+}

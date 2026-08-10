@@ -2,6 +2,19 @@
 
 find_legacy_dxsdk()
 
+# Same compat staging as d3d8: keep the legacy SDK's d3d9/d3dx9 headers only,
+# so the modern Windows SDK supplies the system headers.
+set(RW_D3D9_COMPAT "${CMAKE_BINARY_DIR}/dxsdk-compat-d3d9")
+file(MAKE_DIRECTORY "${RW_D3D9_COMPAT}")
+file(GLOB _d3d9_sdk_hdrs
+  "${RW_DXSDK_INC}/d3d9.h"
+  "${RW_DXSDK_INC}/d3d9caps.h"
+  "${RW_DXSDK_INC}/d3d9types.h"
+  "${RW_DXSDK_INC}/d3dx9*.h"
+  "${RW_DXSDK_INC}/d3dx9*.inl"
+  "${RW_DXSDK_INC}/dxfile.h")
+file(COPY ${_d3d9_sdk_hdrs} DESTINATION "${RW_D3D9_COMPAT}")
+
 set(RW_GENERIC_DRV_SRC
     "${RW_SRC_ROOT}/driver/common/palquant.c"
     "${RW_SRC_ROOT}/driver/common/cpuext.c")
@@ -38,7 +51,7 @@ endif()
 set(RW_DRV_INC
     "${RW_SRC_ROOT}/driver/d3d9"
     "${RW_SRC_ROOT}/world"
-    "${RW_DXSDK_INC}")
+    "${RW_D3D9_COMPAT}")
 set(RW_DRV_DEF "")
 
 # d3dx9 (legacy DirectX SDK utility library) is required by rpworld for the

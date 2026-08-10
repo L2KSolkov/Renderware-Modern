@@ -7,43 +7,49 @@
 #   3. Common installation locations of the June 2010 DirectX SDK
 
 function(find_legacy_dxsdk)
-  set(_hint "")
+  set(_root "")
   if(RW_DXSDK_DIR)
-    list(APPEND _hint "${RW_DXSDK_DIR}")
+    set(_root "${RW_DXSDK_DIR}")
+  elseif(DEFINED ENV{DXSDK_DIR} AND NOT ENV{DXSDK_DIR} STREQUAL "")
+    set(_root "$ENV{DXSDK_DIR}")
+  else()
+    foreach(_candidate IN ITEMS
+        "C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)"
+        "C:/Program Files/Microsoft DirectX SDK (June 2010)"
+        "C:/dxsdk")
+      if(EXISTS "${_candidate}/Include/d3d9.h")
+        set(_root "${_candidate}")
+        break()
+      endif()
+    endforeach()
   endif()
-  if(DEFINED ENV{DXSDK_DIR} AND NOT ENV{DXSDK_DIR} STREQUAL "")
-    list(APPEND _hint "$ENV{DXSDK_DIR}")
-  endif()
-  list(APPEND _hint
-    "C:/Program Files (x86)/Microsoft DirectX SDK (June 2010)"
-    "C:/Program Files/Microsoft DirectX SDK (June 2010)"
-    "C:/dxsdk")
 
-  find_path(RW_DXSDK_DIR_INC d3d9.h
-    HINTS ${_hint}
-    PATH_SUFFIXES include Include
-    NO_DEFAULT_PATH)
-  if(NOT RW_DXSDK_DIR_INC)
-    # d3d9.h also ships in the Windows SDK; only the d3dx9.h check below is
-    # fatal for d3d9.
-    set(RW_DXSDK_DIR_INC "" CACHE INTERNAL "legacy DX SDK include dir" FORCE)
+  set(RW_DXSDK_INC "")
+  set(RW_DXSDK_LIB "")
+  if(_root)
+    if(EXISTS "${_root}/Include")
+      set(RW_DXSDK_INC "${_root}/Include")
+    elseif(EXISTS "${_root}/include")
+      set(RW_DXSDK_INC "${_root}/include")
+    else()
+      set(RW_DXSDK_INC "${_root}")
+    endif()
+    if(EXISTS "${_root}/Lib/x86")
+      set(RW_DXSDK_LIB "${_root}/Lib/x86")
+    elseif(EXISTS "${_root}/lib/x86")
+      set(RW_DXSDK_LIB "${_root}/lib/x86")
+    elseif(EXISTS "${_root}/Lib")
+      set(RW_DXSDK_LIB "${_root}/Lib")
+    elseif(EXISTS "${_root}/lib")
+      set(RW_DXSDK_LIB "${_root}/lib")
+    endif()
   endif()
 
   if(NOT RW_DXSDK_DIR)
-    get_filename_component(_root "${RW_DXSDK_DIR_INC}" DIRECTORY)
     set(RW_DXSDK_DIR "${_root}" CACHE PATH "DXSDK: legacy DirectX SDK" FORCE)
   endif()
-
-  set(RW_DXSDK_INC "${RW_DXSDK_DIR_INC}" CACHE INTERNAL "DX SDK include dir" FORCE)
-
-  set(_libdir "${RW_DXSDK_DIR}/lib")
-  if(EXISTS "${_libdir}/x86")
-    set(_libdir "${_libdir}/x86")
-  endif()
-  if(NOT EXISTS "${_libdir}" AND EXISTS "${RW_DXSDK_DIR}/Lib/x86")
-    set(_libdir "${RW_DXSDK_DIR}/Lib/x86")
-  endif()
-  set(RW_DXSDK_LIB "${_libdir}" CACHE INTERNAL "DX SDK lib dir" FORCE)
+  set(RW_DXSDK_INC "${RW_DXSDK_INC}" PARENT_SCOPE)
+  set(RW_DXSDK_LIB "${RW_DXSDK_LIB}" PARENT_SCOPE)
 
   if(RW_TARGET STREQUAL "d3d8")
     if(NOT EXISTS "${RW_DXSDK_INC}/d3d8.h" OR

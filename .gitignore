@@ -5,6 +5,7 @@ CMakeUserPresets.json
 RWSDK/lib/
 RWSDK/include/
 RWSDK/dll/
+RWSDK/build*/
 RWSDK/obj/
 RWSDK/dep/
 RWSDK/autodocs/

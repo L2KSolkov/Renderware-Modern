@@ -7,7 +7,7 @@
 
 function(rw_add_plugin NAME)
   cmake_parse_arguments(P
-    ""
+    "SKIP_LIBRARY"
     "DIR;PLUGIN;LIBNAME;PLUGINAPI;GENERATE_HEADERS"
     "SOURCES;TARGET_SOURCES;GENERIC_SOURCES;EXTRA_INCLUDES;EXTRA_DEFINES;PLUGININCDIR"
     ${ARGN})
@@ -62,18 +62,20 @@ function(rw_add_plugin NAME)
     list(REMOVE_DUPLICATES _srcs)
   endif()
 
-  add_library(${NAME} STATIC ${_srcs})
-  # -I. comes before -I$(SDKINCDIR) in the make system; the local private
-  # header (e.g. plugin/ltmap/rpltmap.h) must shadow the generated one.
-  target_include_directories(${NAME} PRIVATE "${_dir}")
-  rw_setup_target(${NAME})
-  target_include_directories(${NAME} PRIVATE ${P_EXTRA_INCLUDES})
-  target_compile_definitions(${NAME} PRIVATE ${P_EXTRA_DEFINES})
-  set_target_properties(${NAME} PROPERTIES
-    OUTPUT_NAME "${RW_LIB_PREFIX}${P_LIBNAME}${RW_LIB_SUFFIX}")
-  # Generated headers (core, world, other plugins/toolkits) live in other
-  # projects; force the ordering even for partial (single-target) builds.
-  add_dependencies(${NAME} rw-headers)
+  if(NOT P_SKIP_LIBRARY)
+    add_library(${NAME} STATIC ${_srcs})
+    # -I. comes before -I$(SDKINCDIR) in the make system; the local private
+    # header (e.g. plugin/ltmap/rpltmap.h) must shadow the generated one.
+    target_include_directories(${NAME} PRIVATE "${_dir}")
+    rw_setup_target(${NAME})
+    target_include_directories(${NAME} PRIVATE ${P_EXTRA_INCLUDES})
+    target_compile_definitions(${NAME} PRIVATE ${P_EXTRA_DEFINES})
+    set_target_properties(${NAME} PROPERTIES
+      OUTPUT_NAME "${RW_LIB_PREFIX}${P_LIBNAME}${RW_LIB_SUFFIX}")
+    # Generated headers (core, world, other plugins/toolkits) live in other
+    # projects; force the ordering even for partial (single-target) builds.
+    add_dependencies(${NAME} rw-headers)
+  endif()
 
   set(_rpe "${RW_GEN_INCDIR}/${P_PLUGIN}.rpe")
   set(_hdr "${RW_GEN_INCDIR}/${P_PLUGIN}.h")
@@ -113,6 +115,8 @@ function(rw_add_plugin NAME)
     endif()
   endif()
 
-  # make the header dependencies flow into the library build
-  target_sources(${NAME} PRIVATE "${_hdr}" "${_rpe}")
+  if(NOT P_SKIP_LIBRARY)
+    # make the header dependencies flow into the library build
+    target_sources(${NAME} PRIVATE "${_hdr}" "${_rpe}")
+  endif()
 endfunction()

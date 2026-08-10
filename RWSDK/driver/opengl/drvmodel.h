@@ -188,8 +188,8 @@ typedef RxVertexIndex   RwImVertexIndex;
 #ifndef APIENTRY
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
-#include <gl/gl.h>
 #endif
+#include <gl/gl.h>
 #else
 #define APIENTRY
 #include "gl/gl.h"

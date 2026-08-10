@@ -24,6 +24,11 @@ message(STATUS "Using compiler - ${RW_COMPILER}")
 message(STATUS "Using operating system - ${RW_OS}")
 message(STATUS "")
 
+set(RW_INSTALL_PREFIX "${RW_SRC_ROOT}" CACHE PATH
+    "Where lib/<platform>/<config>/, include/<platform>/ and dll/... land.
+    Defaults to the SDK root so the make-system layout is reproduced next to
+    the sources.")
+
 # `make header` / `make equate` equivalents, defined early so subdirectories
 # can add_dependencies onto them.
 add_custom_target(rw-headers)
@@ -97,26 +102,27 @@ endif()
 set(RW_INSTALL_LIBDIR "lib/${RW_PLATFORM}/${RW_OUTPUT_COMPONENT}${RW_CONFIG_SUFFIX_GENEX}")
 set(RW_INSTALL_DLLDIR "dll/${RW_PLATFORM}/${RW_OUTPUT_COMPONENT}${RW_CONFIG_SUFFIX_GENEX}")
 
-set(RW_INSTALL_TARGETS
-  rwplcore rwcore rpworld
-  ${RW_PLUGIN_LIB_TARGETS}
-  ${RW_TOOLKIT_LIB_TARGETS})
+set(RW_INSTALL_TARGETS rwplcore rwcore)
+if(NOT RW_ONLY_PLCORE)
+  list(APPEND RW_INSTALL_TARGETS rpworld ${RW_PLUGIN_LIB_TARGETS})
+endif()
+list(APPEND RW_INSTALL_TARGETS ${RW_TOOLKIT_LIB_TARGETS})
 
 install(TARGETS ${RW_INSTALL_TARGETS}
   EXPORT RenderWareTargets
-  ARCHIVE DESTINATION "${RW_INSTALL_LIBDIR}"
-  LIBRARY DESTINATION "${RW_INSTALL_LIBDIR}"
-  RUNTIME DESTINATION "${RW_INSTALL_LIBDIR}")
+  ARCHIVE DESTINATION "${RW_INSTALL_PREFIX}/${RW_INSTALL_LIBDIR}"
+  LIBRARY DESTINATION "${RW_INSTALL_PREFIX}/${RW_INSTALL_LIBDIR}"
+  RUNTIME DESTINATION "${RW_INSTALL_PREFIX}/${RW_INSTALL_LIBDIR}")
 
 install(DIRECTORY "${RW_GEN_INCDIR}/"
-  DESTINATION "include/${RW_PLATFORM}")
+  DESTINATION "${RW_INSTALL_PREFIX}/include/${RW_PLATFORM}")
 
 if(RW_DLL)
   install(TARGETS rwgdll
     EXPORT RenderWareTargets
-    RUNTIME DESTINATION "${RW_INSTALL_DLLDIR}"
-    LIBRARY DESTINATION "${RW_INSTALL_DLLDIR}"
-    ARCHIVE DESTINATION "${RW_INSTALL_LIBDIR}")
+    RUNTIME DESTINATION "${RW_INSTALL_PREFIX}/${RW_INSTALL_DLLDIR}"
+    LIBRARY DESTINATION "${RW_INSTALL_PREFIX}/${RW_INSTALL_DLLDIR}"
+    ARCHIVE DESTINATION "${RW_INSTALL_PREFIX}/${RW_INSTALL_LIBDIR}")
 endif()
 
 # OBJECT library backing rwplcore/rwcore: export it so the export set is
