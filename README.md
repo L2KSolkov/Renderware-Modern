@@ -24,6 +24,57 @@ cmake --preset win32-d3d9-release
 cmake --build --preset win32-d3d9-release
 ```
 
+The root `CMakeLists.txt` is a superbuild that configures `RWSDK/` and, when
+`RW_BUILD_EXAMPLES` is ON (default), `examples/` too. `RWSDK/CMakePresets.json`
+still works for SDK-only configures; the root `CMakePresets.json` mirrors the
+same seven presets for the combined build.
+
+## Examples
+
+The 66 example programs (59 demos plus 7 under `Tutorials/`) build from the
+same CMake run and land in `build/<preset>/examples/<name>/<config>/`:
+
+```bat
+cmake --preset win32-d3d9-release
+cmake --build --preset win32-d3d9-release
+```
+
+- Each example is `rw_add_example()` in `examples/CMakeLists.txt` and links
+  the shared `rwskel` framework (`shared/`), which provides the `Rs*`
+  skeleton, the Win32 device-selection dialog (`win.rc`), camera/menu helpers
+  and the baseline RenderWare libraries.
+- Executable names match the original build: `<demo>_<target>[suffix].exe`
+  (`camera_d3d9.exe`, `camera_d3d9d.exe` under `RW_DEBUG=ON`,
+  `camera_d3d9m.exe` under `RW_METRICS=ON`).
+- Assets are staged beside each executable when `RW_EXAMPLES_STAGE_ASSETS`
+  (default ON); `VS_DEBUGGER_WORKING_DIRECTORY` points at the staging dir.
+- `RW_EXAMPLES_LOGO` (default ON) defines `RWLOGO` and links `rplogo`;
+  `RW_EXAMPLES_SPLASH` (default OFF) adds the splash screen and links
+  `vfw32`.
+- `examples/` also works standalone against an installed SDK:
+  `cmake -S examples -B build/ex -DCMAKE_PREFIX_PATH=<prefix>` uses
+  `find_package(RenderWare)` and the exported `RenderWare::` targets.
+
+Target restrictions (from the makefiles' `unsupported` blocks):
+
+| Example | Targets |
+|---|---|
+| `normmap` | d3d9 only |
+| `vshader`, `pshader` | d3d8 and d3d9; the d3d8 variants link the legacy `d3dx8.lib` |
+| `imshadow` | d3d8 and d3d9 (no OpenGL pipeline source ships in this drop) |
+
+So `win32-d3d9-release` builds 66/66 executables, `win32-d3d8-release` 65
+(minus `normmap`), and `win32-opengl-release` 62 (minus `normmap`, `vshader`,
+`pshader` and `imshadow`). The prebuilt executable names were recorded in
+`reference/example-exe-names.txt` before the cleanup and the CMake output
+matches them exactly for the d3d9 demo set.
+
+Two source-level fixes were needed to port the examples against this drop's
+SDK: `shared/skel/skeleton.c` now calls the 4-argument (threaded-lock)
+`RwEngineInit`, and the four `RpHAnimRemove*` animation-compression helpers
+(present in the official 3.7 SDK headers but absent from this drop's hanim
+sources) were implemented in `RWSDK/plugin/hanim/hanimopt.c`.
+
 Presets: `win32-d3d9-debug`, `win32-d3d9-release`, `win32-d3d8-release`,
 `win32-opengl-release`, `win32-null-release`, `win32-d3d9-metrics`,
 `win32-d3d9-dll`. Each pins `-A Win32`.

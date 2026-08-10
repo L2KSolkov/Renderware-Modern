@@ -24,12 +24,12 @@ target_include_directories(rwskel PUBLIC
     "${RW_SKEL}/skel/win"
     "${RW_SKEL}/democom")
 target_link_libraries(rwskel PUBLIC
-    rwcore
-    rpworld
-    rtcharse
-    rtfsyst
-    rtpng
-    rtbmp
-    rppatch)
+    "${RW_EXAMPLE_LIB_PREFIX}rwcore"
+    "${RW_EXAMPLE_LIB_PREFIX}rpworld"
+    "${RW_EXAMPLE_LIB_PREFIX}rtcharse"
+    "${RW_EXAMPLE_LIB_PREFIX}rtfsyst"
+    "${RW_EXAMPLE_LIB_PREFIX}rtpng"
+    "${RW_EXAMPLE_LIB_PREFIX}rtbmp"
+    "${RW_EXAMPLE_LIB_PREFIX}rppatch")
 set_target_properties(rwskel PROPERTIES
     OUTPUT_NAME "rwskel")

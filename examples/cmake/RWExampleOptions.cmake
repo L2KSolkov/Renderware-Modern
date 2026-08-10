@@ -24,6 +24,10 @@ if(RW_METRICS)
   set(RW_EXE_SUFFIX "m")
 elseif(RW_MSWST)
   set(RW_EXE_SUFFIX "wst")
+elseif(RW_DEBUG)
+  # makeopt checks RWMETRICS then RWDEBUG for the output dir and suffix;
+  # RWDEBUG alone (without CDEBUG) still produces the 'd' suffix
+  set(RW_EXE_SUFFIX "d")
 else()
   # AUTO mode: derive from the build type. MinSizeRel and Release both land
   # in the flat release dir with no suffix, exactly like the make system.

@@ -11,6 +11,13 @@ file(MAKE_DIRECTORY "${RW_D3D8_COMPAT}")
 foreach(_h IN ITEMS d3d8.h d3d8caps.h d3d8types.h)
   file(COPY "${RW_DXSDK_INC}/${_h}" DESTINATION "${RW_D3D8_COMPAT}")
 endforeach()
+foreach(_h IN ITEMS d3dx8.h d3dx8core.h d3dx8math.h d3dx8math.inl
+             d3dx8mesh.h d3dx8tex.h d3dx8shape.h d3dx8effect.h d3dx8anim.h
+             dxfile.h)
+  if(EXISTS "${RW_DXSDK_INC}/${_h}")
+    file(COPY "${RW_DXSDK_INC}/${_h}" DESTINATION "${RW_D3D8_COMPAT}")
+  endif()
+endforeach()
 
 set(RW_GENERIC_DRV_SRC
     "${RW_SRC_ROOT}/driver/common/palquant.c"

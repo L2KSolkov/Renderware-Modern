@@ -5,6 +5,11 @@
 # Standalone (installed SDK): consumes RenderWare via find_package and links
 # the exported RenderWare:: targets.
 
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  cmake_minimum_required(VERSION 3.21)
+  project(RenderWareExamples LANGUAGES C)
+endif()
+
 if(NOT TARGET rwcore)
   find_package(RenderWare REQUIRED)
   set(RW_EXAMPLE_LIB_PREFIX "RenderWare::")
@@ -15,6 +20,16 @@ if(NOT TARGET rwcore)
   set(RW_PLATFORMEXE "${RW_TARGET}")
   set(RW_EXE_SUFFIX "")
   set(RW_SRC_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../RWSDK")
+  set(RW_GEN_INCDIR "${RenderWare_INCLUDE_DIRS}")
+  set(RW_BASE_C_FLAGS /nologo /W3)
+  set(RW_BASE_DEFINES WIN32 _WINDOWS _MBCS __MSC__ VC_EXTRALEAN
+      WIN32_EXTRA_LEAN WIN32_LEAN_AND_MEAN)
+  set(RW_FEATURE_DEFINES "")
+  set(RW_CONFIG_FLAGS "")
+  set(RW_DRV_DEF "")
+  set(RW_C_INC "")
+  set(RW_DRV_INC "")
+  include("${RW_SRC_ROOT}/cmake/RWTargetUtils.cmake")
 else()
   set(RW_EXAMPLE_LIB_PREFIX "")
   get_filename_component(RW_SRC_ROOT
@@ -318,6 +333,16 @@ if(RW_TARGET STREQUAL "d3d8")
   # vshader/pshader need the legacy d3dx8 utility library on d3d8
   target_link_libraries(vshader PRIVATE "${RW_D3DX8_LIB}" gdi32 uuid advapi32)
   target_link_libraries(pshader PRIVATE "${RW_D3DX8_LIB}" gdi32 uuid advapi32)
+  # the legacy d3dx8 import library references the old C++ runtime names
+  # (makefile: /NODEFAULTLIB:libci + libcp/libcpd)
+  target_link_options(vshader PRIVATE
+    /NODEFAULTLIB:libci
+    "$<$<BOOL:${RW_CDEBUG_ENABLED}>:/NODEFAULTLIB:libcpd>"
+    "$<$<NOT:$<BOOL:${RW_CDEBUG_ENABLED}>>:/NODEFAULTLIB:libcp>")
+  target_link_options(pshader PRIVATE
+    /NODEFAULTLIB:libci
+    "$<$<BOOL:${RW_CDEBUG_ENABLED}>:/NODEFAULTLIB:libcpd>"
+    "$<$<NOT:$<BOOL:${RW_CDEBUG_ENABLED}>>:/NODEFAULTLIB:libcp>")
 endif()
 
 add_subdirectory(Tutorials)
