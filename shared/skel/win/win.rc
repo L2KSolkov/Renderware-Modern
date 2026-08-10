@@ -4,11 +4,9 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#if !defined(__GNU_C__)
-#include "afxres.h"
-#else
+/* afxres.h ships only with MFC; winresrc.h is the SDK equivalent and
+ * provides the same IDC_STATIC/standard resource defines. */
 #include "winresrc.h"
-#endif /* !defined(__GNU_C__) */
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS

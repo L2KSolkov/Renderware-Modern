@@ -733,7 +733,9 @@ RsRwInitialize(void *displayID)
     /*
      * Start RenderWare...
      */
-    if (!RwEngineInit(&MemoryFunctions, 0, rsRESOURCESDEFAULTARENASIZE))
+    /* The 3.7 SDK's RwEngineInit takes an optional lock-function table
+     * (thread-safe locks); pass NULL for the default implementation. */
+    if (!RwEngineInit(&MemoryFunctions, NULL, 0, rsRESOURCESDEFAULTARENASIZE))
     {
         return (FALSE);
     }

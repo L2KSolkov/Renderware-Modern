@@ -339,6 +339,32 @@ RpHAnimRemoveDuplicates( RtAnimAnimation *animsrc,
                            RwReal          averageNodeSize);
 
 extern RtAnimAnimation *
+RpHAnimRemoveInterpolate( RtAnimAnimation *animsrc,
+                          RwInt32         numBones,
+                          RwReal          tolerance,
+                          RwReal          averageNodeSize);
+
+extern RtAnimAnimation *
+RpHAnimRemoveInterpolateLoop( RtAnimAnimation *animsrc,
+                              RwInt32         numBones,
+                              RwReal          tolerance,
+                              RwReal          averageNodeSize);
+
+extern RtAnimAnimation *
+RpHAnimRemoveInterpolatesLoopLength( RtAnimAnimation *animsrc,
+                                     RwUInt32        *pushpops,
+                                     RwInt32         numBones,
+                                     RwReal          tolerance,
+                                     RwReal          averageNodeSize);
+
+extern RtAnimAnimation *
+RpHAnimRemoveNoLeafChange( RtAnimAnimation *animsrc,
+                           RwUInt32        *pushpops,
+                           RwInt32         numBones,
+                           RwReal          tolerance,
+                           RwReal          averageNodeSize);
+
+extern RtAnimAnimation *
 RpHAnimAnimationOptimize( RtAnimAnimation *animsrc,
                           RwUInt32        *pushpops,
                           RwInt32         numBones,

@@ -927,3 +927,241 @@ RpHAnimAnimationOptimize( RtAnimAnimation *srcAnim,
 
     RWRETURN(dstAnim);
 }
+
+/* Shared tail of the RpHAnimRemove* family: filter the per-bone keyframe
+ * lists, rebuild a reduced animation and scatter the survivors back. */
+static RtAnimAnimation *
+HAnimRemoveKeyframes(RtAnimAnimation *srcAnim,
+                     RwInt32         *parentIndex,
+                     RwInt32          numBones,
+                     RwReal           tolerance,
+                     RwReal           averageNodeSize)
+{
+    RtAnimAnimation *dstAnim = NULL;
+    RwSList *kflist[MAX_BONES];
+    RwInt32 i, framesRemoved = 0;
+
+    RWFUNCTION( RWSTRING( "HAnimRemoveKeyframes" ) );
+
+    RWASSERT(srcAnim != NULL);
+    RWASSERT(parentIndex != NULL);
+    RWASSERT(numBones < MAX_BONES);
+
+    /* Build a list per bone. */
+    HAnimBuildBoneLists(kflist, srcAnim, numBones);
+
+    /* firstly normalize Quaternions */
+    ConditionKeyframes(kflist, numBones);
+
+    framesRemoved = FilterInterpolatesLoopHierCheck(kflist, numBones,
+                                       parentIndex, srcAnim,
+                                       tolerance, averageNodeSize);
+
+    /* lastly normalize Quaternions */
+    ConditionKeyframes(kflist, numBones);
+
+    /* Create the output animation. */
+    dstAnim = RtAnimAnimationCreate(rpHANIMSTDKEYFRAMETYPEID,
+                                    srcAnim->numFrames - framesRemoved,
+                                    srcAnim->flags,
+                                    srcAnim->duration);
+
+    /* scatter list of keyframes for each bone back to HAnim (fixing up
+     * PrevFrame as we go) */
+    HAnimScatterBoneLists(kflist, dstAnim, numBones);
+
+    /* clean up (empty) lists */
+    for (i=0; i<numBones; ++i)
+    {
+        rwSListDestroy(kflist[i]);
+    }
+
+    RWRETURN(dstAnim);
+}
+
+/**
+ * \ingroup rphanim
+ * \ref RpHAnimRemoveInterpolate creates a HAnim \ref RtAnimAnimation.
+ * This function removes keyframes that can be recovered by interpolation.
+ * The hierarchy is treated as a simple chain, so it does not need the
+ * push/pop flags.
+ *
+ * \param animsrc Pointer to \ref RtAnimAnimation to optimize.
+ * \param numBones \ref RwInt32 containing the number of bones.
+ * \param tolerance \ref RwReal how much keyframes can differ, in world space,
+ * and still be considered the same.
+ * \param averageNodeSize \ref RwReal used to convert angle difference to
+ * length difference.
+ *
+ */
+RtAnimAnimation *
+RpHAnimRemoveInterpolate( RtAnimAnimation *animsrc,
+                          RwInt32         numBones,
+                          RwReal          tolerance,
+                          RwReal          averageNodeSize)
+{
+    RtAnimAnimation *dstAnim = NULL;
+    RwInt32 parentIndex[MAX_BONES];
+    RwInt32 i;
+
+    RWAPIFUNCTION( RWSTRING( "RpHAnimRemoveInterpolate" ) );
+
+    RWASSERT(NULL != animsrc);
+    RWASSERT(numBones < MAX_BONES);
+
+    /* check its correct keyframe type */
+    if (animsrc->interpInfo->typeID != rpHANIMSTDKEYFRAMETYPEID)
+    {
+        RWRETURN(dstAnim);
+    }
+
+    /* simple chain hierarchy: bone i hangs off bone i-1 */
+    for (i=0; i<numBones; ++i)
+    {
+        parentIndex[i] = i - 1;
+    }
+
+    dstAnim = HAnimRemoveKeyframes(animsrc, parentIndex, numBones,
+                                   tolerance, averageNodeSize);
+
+    RWRETURN(dstAnim);
+}
+
+/**
+ * \ingroup rphanim
+ * \ref RpHAnimRemoveInterpolateLoop creates a HAnim \ref RtAnimAnimation.
+ * This function removes keyframes that can be recovered by interpolation,
+ * allowing runs of removable keyframes (the loop of the animation).
+ * The hierarchy is treated as a simple chain.
+ *
+ * \param animsrc Pointer to \ref RtAnimAnimation to optimize.
+ * \param numBones \ref RwInt32 containing the number of bones.
+ * \param tolerance \ref RwReal how much keyframes can differ, in world space,
+ * and still be considered the same.
+ * \param averageNodeSize \ref RwReal used to convert angle difference to
+ * length difference.
+ *
+ */
+RtAnimAnimation *
+RpHAnimRemoveInterpolateLoop( RtAnimAnimation *animsrc,
+                              RwInt32         numBones,
+                              RwReal          tolerance,
+                              RwReal          averageNodeSize)
+{
+    RtAnimAnimation *dstAnim = NULL;
+    RwInt32 parentIndex[MAX_BONES];
+    RwInt32 i;
+
+    RWAPIFUNCTION( RWSTRING( "RpHAnimRemoveInterpolateLoop" ) );
+
+    RWASSERT(NULL != animsrc);
+    RWASSERT(numBones < MAX_BONES);
+
+    /* check its correct keyframe type */
+    if (animsrc->interpInfo->typeID != rpHANIMSTDKEYFRAMETYPEID)
+    {
+        RWRETURN(dstAnim);
+    }
+
+    /* simple chain hierarchy: bone i hangs off bone i-1 */
+    for (i=0; i<numBones; ++i)
+    {
+        parentIndex[i] = i - 1;
+    }
+
+    dstAnim = HAnimRemoveKeyframes(animsrc, parentIndex, numBones,
+                                   tolerance, averageNodeSize);
+
+    RWRETURN(dstAnim);
+}
+
+/**
+ * \ingroup rphanim
+ * \ref RpHAnimRemoveInterpolatesLoopLength creates a HAnim \ref RtAnimAnimation.
+ * This function removes keyframes that can be recovered by interpolation,
+ * allowing runs of removable keyframes and using the model hierarchy (from
+ * the push/pop flags) to measure leaf movement.
+ *
+ * \param animsrc Pointer to \ref RtAnimAnimation to optimize.
+ * \param pushpops Pointer to \ref RwUInt32 containing a list of
+ *                 HAnim push/pop flags, of length \e numBones.
+ * \param numBones \ref RwInt32 containing the number of bones.
+ * \param tolerance \ref RwReal how much keyframes can differ, in world space,
+ * and still be considered the same.
+ * \param averageNodeSize \ref RwReal used to convert angle difference to
+ * length difference.
+ *
+ */
+RtAnimAnimation *
+RpHAnimRemoveInterpolatesLoopLength( RtAnimAnimation *animsrc,
+                                     RwUInt32        *pushpops,
+                                     RwInt32         numBones,
+                                     RwReal          tolerance,
+                                     RwReal          averageNodeSize)
+{
+    RtAnimAnimation *dstAnim = NULL;
+    RwInt32 parentIndex[MAX_BONES];
+
+    RWAPIFUNCTION( RWSTRING( "RpHAnimRemoveInterpolatesLoopLength" ) );
+
+    RWASSERT(NULL != animsrc);
+    RWASSERT(numBones < MAX_BONES);
+
+    /* check its correct keyframe type */
+    if (animsrc->interpInfo->typeID != rpHANIMSTDKEYFRAMETYPEID)
+    {
+        RWRETURN(dstAnim);
+    }
+
+    HAnimBuildParentIndex(parentIndex, pushpops, numBones);
+
+    dstAnim = HAnimRemoveKeyframes(animsrc, parentIndex, numBones,
+                                   tolerance, averageNodeSize);
+
+    RWRETURN(dstAnim);
+}
+
+/**
+ * \ingroup rphanim
+ * \ref RpHAnimRemoveNoLeafChange creates a HAnim \ref RtAnimAnimation.
+ * This function removes keyframes whose removal does not move any leaf of
+ * the hierarchy by more than the tolerance.
+ *
+ * \param animsrc Pointer to \ref RtAnimAnimation to optimize.
+ * \param pushpops Pointer to \ref RwUInt32 containing a list of
+ *                 HAnim push/pop flags, of length \e numBones.
+ * \param numBones \ref RwInt32 containing the number of bones.
+ * \param tolerance \ref RwReal how much keyframes can differ, in world space,
+ * and still be considered the same.
+ * \param averageNodeSize \ref RwReal used to convert angle difference to
+ * length difference.
+ *
+ */
+RtAnimAnimation *
+RpHAnimRemoveNoLeafChange( RtAnimAnimation *animsrc,
+                           RwUInt32        *pushpops,
+                           RwInt32         numBones,
+                           RwReal          tolerance,
+                           RwReal          averageNodeSize)
+{
+    RtAnimAnimation *dstAnim = NULL;
+    RwInt32 parentIndex[MAX_BONES];
+
+    RWAPIFUNCTION( RWSTRING( "RpHAnimRemoveNoLeafChange" ) );
+
+    RWASSERT(NULL != animsrc);
+    RWASSERT(numBones < MAX_BONES);
+
+    /* check its correct keyframe type */
+    if (animsrc->interpInfo->typeID != rpHANIMSTDKEYFRAMETYPEID)
+    {
+        RWRETURN(dstAnim);
+    }
+
+    HAnimBuildParentIndex(parentIndex, pushpops, numBones);
+
+    dstAnim = HAnimRemoveKeyframes(animsrc, parentIndex, numBones,
+                                   tolerance, averageNodeSize);
+
+    RWRETURN(dstAnim);
+}
