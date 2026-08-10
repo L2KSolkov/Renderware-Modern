@@ -6,6 +6,7 @@ target_compile_options(rtvcat PRIVATE /EHs-c-)
 
 if(RW_VCAT_RUNTIME_VARIANTS AND RW_TARGET STREQUAL "null")
   rw_add_toolkit(rtvcatmd DIR tool/vcat
+    PLUGIN rtvcat
     LIBNAME rtvcatmd
     GENERATE_HEADERS OFF
     SOURCES
@@ -13,6 +14,7 @@ if(RW_VCAT_RUNTIME_VARIANTS AND RW_TARGET STREQUAL "null")
       xbstrip.cpp)
   target_compile_options(rtvcatmd PRIVATE /EHs-c- /MD)
   rw_add_toolkit(rtvcatmt DIR tool/vcat
+    PLUGIN rtvcat
     LIBNAME rtvcatmt
     GENERATE_HEADERS OFF
     SOURCES

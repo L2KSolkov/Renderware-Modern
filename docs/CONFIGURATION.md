@@ -92,6 +92,43 @@ WIN32_LEAN_AND_MEAN`).
 |---|---|---|
 | `RW_MSWST` | `MSWST` | Microsoft Working Set Tuner build: the distinct flag set (`/DNDEBUG /EHsc /Gh /Gs /O2 /Ob1 /Zi` + `wst.lib` in the original) and its own `mswst` output directory. |
 
+### Decoupled compile-mode flags
+
+The four switches the table above derives from `CMAKE_BUILD_TYPE` are also
+exposed directly as `AUTO`/`ON`/`OFF` cache options. `AUTO` keeps the
+derivation from the build type; setting any one of them to `ON` or `OFF`
+switches the whole group to manual mode, where the remaining `AUTO` entries
+resolve to their make-system defaults (`0`) and everything - compile flags,
+runtime, output directory, DLL `d` suffix - follows the resolved switches.
+
+| Flag | make var | AUTO resolution | ON |
+|---|---|---|---|
+| `RW_CDEBUG` | `CDEBUG` | Debug config | `/Zi /D_DEBUG /UNDEBUG`, debug CRT (`/MTd`, `/MDd` under `RW_DLL`), `debug` output dir, DLL `d` suffix |
+| `RW_CPROFILE` | `CPROFILE` | RelWithDebInfo config | `/O2 /Zi /U_DEBUG /DNDEBUG` (+ `/Ob0` when `RW_COPTIMIZE=OFF`), `/MT`, `profile` output dir |
+| `RW_COPTIMIZE` | `COPTIMIZE` | OFF when `RW_CDEBUG`/`RW_CPROFILE`/`RW_MSWST` are on, else ON | `/O2 /Ob2` (or `/O1 /Ob2` with `RW_SMALLCODE`); OFF gives `/Od /Ob0 /Oy-` |
+| `RW_SMALLCODE` | `SMALLCODE` | MinSizeRel config | `/O1 /Ob2` and `/MD` runtime |
+
+`RW_MSWST` stays a plain `ON`/`OFF` option and participates in the same
+resolution (it implies `RW_COPTIMIZE` AUTO = OFF, and its own flag set and
+`mswst` output dir win unless `RW_CDEBUG`/`RW_CPROFILE` are on).
+
+Examples:
+
+```bat
+:: unoptimised release build (make's COPTIMIZE=0)
+cmake -S RWSDK -B build/noopt -A Win32 -DRW_TARGET=null -DRW_COPTIMIZE=OFF
+
+:: debug flags under a Release-style build, output in lib/<target>/debug
+cmake -S RWSDK -B build/dbg -A Win32 -DRW_TARGET=null -DRW_CDEBUG=ON
+
+:: profiling build independent of the build type
+cmake -S RWSDK -B build/prof -A Win32 -DRW_TARGET=null -DRW_CPROFILE=ON
+
+:: optimised debug (make's CDEBUG=1 with COPTIMIZE=1)
+cmake -S RWSDK -B build/optdbg -A Win32 -DRW_TARGET=null ^
+      -DRW_CDEBUG=ON -DRW_COPTIMIZE=ON
+```
+
 ## Library form
 
 | Flag | make var | Purpose |

@@ -1,7 +1,8 @@
-﻿$ref = "D:\RW_372_src\reference\generated-headers-3.7.2"
-$got = "D:\RW_372_src\build-d3d9\include\d3d9"
+﻿param(
+    [string]$got = "D:\RW_372_src\RWSDK\build\win32-d3d9-release\include\d3d9"
+)
+$ref = "D:\RW_372_src\reference\generated-headers-3.7.2"
 function Normalize($text) {
-    $lines = $text -split "`r?`n"
     $out = New-Object System.Collections.Generic.List[string]
     foreach ($line in $lines) {
         if ($line -match '^\s*\*\s*Filename: <.*>$') { continue }

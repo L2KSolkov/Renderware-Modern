@@ -201,27 +201,157 @@ set(RW_BASE_C_FLAGS /nologo /W3 /Zl)
 set(RW_BASE_DEFINES WIN32 _WINDOWS _MBCS __MSC__ VC_EXTRALEAN
     WIN32_EXTRA_LEAN WIN32_LEAN_AND_MEAN)
 
-set(RW_DBG_FLAGS "/Od;/Ob0;/Oy-;/Zi;/D_DEBUG;/UNDEBUG")
+## The four legacy compile-mode switches are decoupled from CMAKE_BUILD_TYPE.
+## Each is AUTO, ON or OFF:
+##   RW_CDEBUG     debug compile flags, debug CRT, "debug" output directory
+##   RW_CPROFILE   profiling compile flags, "profile" output directory
+##   RW_COPTIMIZE  optimisation on/off (AUTO = off for CDEBUG/CPROFILE/MSWST)
+##   RW_SMALLCODE  small-code compile flags and /MD runtime
+## With every one left AUTO the original build-type mapping is used verbatim.
+## Setting any of them explicitly switches the whole group to manual mode:
+## AUTO entries then resolve to their make-system defaults (0) and the flags,
+## output directories and the DLL name all follow the resolved switches.
+set(RW_CDEBUG "AUTO" CACHE STRING
+    "CDEBUG: debug compile flags, debug CRT and 'debug' output dir. AUTO = Debug config; ON/OFF overrides.")
+set(RW_COPTIMIZE "AUTO" CACHE STRING
+    "COPTIMIZE: optimisation. AUTO = off for CDEBUG/CPROFILE/MSWST builds, else on; ON/OFF overrides.")
+set(RW_CPROFILE "AUTO" CACHE STRING
+    "CPROFILE: profiling compile flags (/O2 /Zi, NDEBUG) and 'profile' output dir. AUTO = RelWithDebInfo config; ON/OFF overrides.")
+set(RW_SMALLCODE "AUTO" CACHE STRING
+    "SMALLCODE: small-code compile flags (/O1 /Ob2) and /MD runtime. AUTO = MinSizeRel config; ON/OFF overrides.")
+foreach(_v IN ITEMS RW_CDEBUG RW_COPTIMIZE RW_CPROFILE RW_SMALLCODE)
+  set_property(CACHE ${_v} PROPERTY STRINGS AUTO ON OFF)
+endforeach()
+
+set(RW_MANUAL_FLAGS OFF)
+foreach(_v IN ITEMS RW_CDEBUG RW_COPTIMIZE RW_CPROFILE RW_SMALLCODE)
+  if(NOT "${${_v}}" STREQUAL "AUTO")
+    set(RW_MANUAL_FLAGS ON)
+  endif()
+endforeach()
+
+set(RW_DBG_FLAGS "/Zi;/D_DEBUG;/UNDEBUG")
 set(RW_PRF_FLAGS "/O2;/Zi;/U_DEBUG;/DNDEBUG")
-set(RW_MIN_FLAGS "/O1;/Ob2;/U_DEBUG;/DNDEBUG")
-set(RW_REL_FLAGS "/O2;/Ob2;/U_DEBUG;/DNDEBUG")
+set(RW_REL_FLAGS "/U_DEBUG;/DNDEBUG")
 set(RW_WST_FLAGS "/DNDEBUG;/EHsc;/Gh;/Gs;/O2;/Ob1;/Zi;/U_CRTDBG_MAP_ALLOC;/U_DEBUG")
+set(RW_OPT_FULL_FLAGS "/O2;/Ob2")
+set(RW_OPT_SMALL_FLAGS "/O1;/Ob2")
+set(RW_OPT_OFF_FLAGS "/Od;/Ob0;/Oy-")
+set(RW_OPT_PROFILE_FLAGS "/Ob0")
 
-set(RW_RT_DBG "$<IF:$<BOOL:${RW_DLL}>,/MDd,/MTd>")
-set(RW_RT_REL "$<IF:$<BOOL:${RW_DLL}>,/MD,/MT>")
+if(RW_MANUAL_FLAGS)
+  ## manual mode: resolve the switches at configure time
+  set(RW_CDEBUG_ENABLED OFF)
+  set(RW_CPROFILE_ENABLED OFF)
+  set(RW_SMALLCODE_ENABLED OFF)
+  if(RW_CDEBUG STREQUAL "ON")
+    set(RW_CDEBUG_ENABLED ON)
+  endif()
+  if(RW_CPROFILE STREQUAL "ON")
+    set(RW_CPROFILE_ENABLED ON)
+  endif()
+  if(RW_SMALLCODE STREQUAL "ON")
+    set(RW_SMALLCODE_ENABLED ON)
+  endif()
+  if(RW_COPTIMIZE STREQUAL "ON")
+    set(RW_COPTIMIZE_ENABLED ON)
+  elseif(RW_COPTIMIZE STREQUAL "OFF")
+    set(RW_COPTIMIZE_ENABLED OFF)
+  elseif(NOT RW_CDEBUG_ENABLED AND NOT RW_CPROFILE_ENABLED AND NOT RW_MSWST)
+    set(RW_COPTIMIZE_ENABLED ON)
+  else()
+    set(RW_COPTIMIZE_ENABLED OFF)
+  endif()
 
-if(RW_MSWST)
-  set(RW_CONFIG_FLAGS
-      "$<$<CONFIG:Debug>:${RW_DBG_FLAGS};${RW_RT_DBG}>"
-      "$<$<CONFIG:RelWithDebInfo>:${RW_PRF_FLAGS};${RW_RT_REL}>"
-      "$<$<CONFIG:Release>:${RW_WST_FLAGS}>"
-      "$<$<CONFIG:MinSizeRel>:${RW_WST_FLAGS}>")
+  # runtime: make's C_SHARED with /ML(/MLd) mapped to /MT(/MTd)
+  if(RW_CDEBUG_ENABLED)
+    if(RW_DLL)
+      set(_rw_rt "/MDd")
+    else()
+      set(_rw_rt "/MTd")
+    endif()
+  elseif(RW_DLL)
+    set(_rw_rt "/MD")
+  elseif(RW_SMALLCODE_ENABLED)
+    set(_rw_rt "/MD")
+  else()
+    set(_rw_rt "/MT")
+  endif()
+
+  set(RW_CONFIG_FLAGS "")
+  if(RW_CDEBUG_ENABLED)
+    set(RW_CONFIG_FLAGS ${RW_DBG_FLAGS})
+    if(RW_COPTIMIZE_ENABLED)
+      if(RW_SMALLCODE_ENABLED)
+        list(APPEND RW_CONFIG_FLAGS ${RW_OPT_SMALL_FLAGS})
+      else()
+        list(APPEND RW_CONFIG_FLAGS ${RW_OPT_FULL_FLAGS})
+      endif()
+    else()
+      list(APPEND RW_CONFIG_FLAGS ${RW_OPT_OFF_FLAGS})
+    endif()
+  elseif(RW_CPROFILE_ENABLED)
+    set(RW_CONFIG_FLAGS ${RW_PRF_FLAGS})
+    if(RW_COPTIMIZE_ENABLED)
+      if(RW_SMALLCODE_ENABLED)
+        list(APPEND RW_CONFIG_FLAGS ${RW_OPT_SMALL_FLAGS})
+      else()
+        list(APPEND RW_CONFIG_FLAGS ${RW_OPT_FULL_FLAGS})
+      endif()
+    else()
+      list(APPEND RW_CONFIG_FLAGS ${RW_OPT_PROFILE_FLAGS})
+    endif()
+  elseif(RW_MSWST)
+    set(RW_CONFIG_FLAGS ${RW_WST_FLAGS})
+  else()
+    set(RW_CONFIG_FLAGS ${RW_REL_FLAGS})
+    if(RW_COPTIMIZE_ENABLED)
+      if(RW_SMALLCODE_ENABLED)
+        list(APPEND RW_CONFIG_FLAGS ${RW_OPT_SMALL_FLAGS})
+      else()
+        list(APPEND RW_CONFIG_FLAGS ${RW_OPT_FULL_FLAGS})
+      endif()
+    else()
+      list(APPEND RW_CONFIG_FLAGS ${RW_OPT_OFF_FLAGS})
+    endif()
+  endif()
+  if(NOT RW_MSWST)
+    list(APPEND RW_CONFIG_FLAGS "${_rw_rt}")
+  endif()
+
+  # output directory follows the resolved switches (makeopt precedence:
+  # metrics -> debug -> profile -> mswst -> flat -> release)
+  if(RW_METRICS)
+    set(RW_CONFIG_SUFFIX_GENEX "metrics")
+  elseif(RW_CDEBUG_ENABLED)
+    set(RW_CONFIG_SUFFIX_GENEX "debug")
+  elseif(RW_CPROFILE_ENABLED)
+    set(RW_CONFIG_SUFFIX_GENEX "profile")
+  elseif(RW_MSWST)
+    set(RW_CONFIG_SUFFIX_GENEX "mswst")
+  elseif(RW_31_DIRS)
+    set(RW_CONFIG_SUFFIX_GENEX "")
+  else()
+    set(RW_CONFIG_SUFFIX_GENEX "release")
+  endif()
 else()
-  set(RW_CONFIG_FLAGS
-      "$<$<CONFIG:Debug>:${RW_DBG_FLAGS};${RW_RT_DBG}>"
-      "$<$<CONFIG:RelWithDebInfo>:${RW_PRF_FLAGS};${RW_RT_REL}>"
-      "$<$<CONFIG:MinSizeRel>:${RW_MIN_FLAGS};/MD>"
-      "$<$<CONFIG:Release>:${RW_REL_FLAGS};${RW_RT_REL}>")
+  ## AUTO mode: original build-type mapping, unchanged
+  set(RW_CDEBUG_ENABLED "$<CONFIG:Debug>")
+  set(RW_RT_DBG "$<IF:$<BOOL:${RW_DLL}>,/MDd,/MTd>")
+  set(RW_RT_REL "$<IF:$<BOOL:${RW_DLL}>,/MD,/MT>")
+  if(RW_MSWST)
+    set(RW_CONFIG_FLAGS
+        "$<$<CONFIG:Debug>:${RW_DBG_FLAGS};${RW_OPT_OFF_FLAGS};${RW_RT_DBG}>"
+        "$<$<CONFIG:RelWithDebInfo>:${RW_PRF_FLAGS};${RW_RT_REL}>"
+        "$<$<CONFIG:Release>:${RW_WST_FLAGS}>"
+        "$<$<CONFIG:MinSizeRel>:${RW_WST_FLAGS}>")
+  else()
+    set(RW_CONFIG_FLAGS
+        "$<$<CONFIG:Debug>:${RW_DBG_FLAGS};${RW_OPT_OFF_FLAGS};${RW_RT_DBG}>"
+        "$<$<CONFIG:RelWithDebInfo>:${RW_PRF_FLAGS};${RW_RT_REL}>"
+        "$<$<CONFIG:MinSizeRel>:${RW_REL_FLAGS};${RW_OPT_SMALL_FLAGS};/MD>"
+        "$<$<CONFIG:Release>:${RW_REL_FLAGS};${RW_OPT_FULL_FLAGS};${RW_RT_REL}>")
+endif()
 endif()
 
 ##---------------------------------------------------------------- include dirs

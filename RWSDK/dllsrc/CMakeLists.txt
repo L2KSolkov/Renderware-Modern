@@ -35,7 +35,9 @@ if(NOT RW_DUMPBIN)
   endif()
 endif()
 
-set(_rwgdllname "rwg${RW_TARGET}$<$<CONFIG:Debug>:d>")
+# The 'd' suffix follows CDEBUG (debug CRT), not the build type; in AUTO mode
+# RW_CDEBUG_ENABLED is a per-config generator expression.
+set(_rwgdllname "rwg${RW_TARGET}$<$<BOOL:${RW_CDEBUG_ENABLED}>:d>")
 
 # makedll:62-151 - most-combined variant of each family to avoid duplicate
 # symbols; target-conditional entries included.
@@ -98,7 +100,7 @@ if(CMAKE_RC_COMPILER)
             "/i${RW_SRC_ROOT}/dllsrc"
             "/dLANG_ENGLISH=0x09"
             "/dSUBLANG_ENGLISH_UK=0x02"
-            "/d$<$<CONFIG:Debug>:_DEBUG:NDEBUG>"
+            "/d$<$<BOOL:${RW_CDEBUG_ENABLED}>:_DEBUG:NDEBUG>"
             "/fo${_rc_out}"
             "${RW_SRC_ROOT}/dllsrc/rwgdll.rc"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -188,7 +190,7 @@ endforeach()
 target_link_libraries(rwgdll PRIVATE
   ${_dlllibs}
   ${_target_deps}
-  "$<$<CONFIG:Debug>:${_rt_debug}>"
-  "$<$<NOT:$<CONFIG:Debug>>:${_rt_release}>")
+  "$<$<BOOL:${RW_CDEBUG_ENABLED}>:${_rt_debug}>"
+  "$<$<NOT:$<BOOL:${RW_CDEBUG_ENABLED}>>:${_rt_release}>")
 
 set(RW_DLL_TARGET rwgdll PARENT_SCOPE)

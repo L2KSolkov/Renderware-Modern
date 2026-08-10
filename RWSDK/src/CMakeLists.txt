@@ -211,7 +211,7 @@ endif()
 ##---------------------------------------------------------- MASM flags
 # visualc/makecom:84-94 plus the baequate.i include directory (build tree).
 set(CMAKE_ASM_MASM_FLAGS
-    "/nologo /c /W2 /Cp /Zm /DBCC /DSTACK /coff /I${RW_SRC_ROOT}/driver/common /I${RW_SRC_ROOT}/makeincl/rwos/${RW_OS}/masm /I${RW_SRC_ROOT}/src /I${RW_SRC_ROOT}/driver/${RW_TARGET} /I${RW_GEN_INCDIR}")
+    "/nologo /c /W2 /Cp /Zm /DBCC /DSTACK /coff /I${RW_SRC_ROOT}/driver/common /I${RW_SRC_ROOT}/os/${RW_OS}/masm /I${RW_SRC_ROOT}/src /I${RW_SRC_ROOT}/driver/${RW_TARGET} /I${RW_GEN_INCDIR}")
 if(NOT RW_NOASM)
   # baequate.i is generated into the build tree, not the source tree
   string(APPEND CMAKE_ASM_MASM_FLAGS

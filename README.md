@@ -70,6 +70,10 @@ layout, and configuration mapping - lives in
 | `RW_PS2MANAGER` | `PS2MANAGER` | `PS2MANAGER` (PS2 stub) |
 | `RW_NOASM` | `NOASM` | `NOASM`; drops the MASM sources and `ssematml.c` |
 | `RW_NOSSEASM` | `NOSSEASM` | `NOSSEASM` (OpenGL only, as in the makefiles) |
+| `RW_CDEBUG` | `CDEBUG` | `AUTO`/`ON`/`OFF`: debug compile flags, debug CRT and `debug` output dir |
+| `RW_COPTIMIZE` | `COPTIMIZE` | `AUTO`/`ON`/`OFF`: optimisation on/off, decoupled from the debug switches |
+| `RW_CPROFILE` | `CPROFILE` | `AUTO`/`ON`/`OFF`: profiling flags (`/O2 /Zi`) and `profile` output dir |
+| `RW_SMALLCODE` | `SMALLCODE` | `AUTO`/`ON`/`OFF`: small-code flags (`/O1 /Ob2`) and `/MD` runtime |
 | `RW_FULL_PLATFORM` | `RWFULLPLATFORM` | `lib/<os>/<compiler>/<target>` layout |
 | `RW_31_DIRS` | `RW31DIRS` | flat RW3.1 output directories |
 | `RW_MSWST` | `MSWST` | Working Set Tuner flag set, `mswst` dir |
@@ -88,6 +92,14 @@ Configuration mapping: `Debug` ~= `CDEBUG=1` (`/Od /Ob0 /Oy- /Zi /D_DEBUG`,
 `/MT(/d)`; `/GX` maps to `/EHsc`; the combined `-Oity`/`-Ob0gity` forms are
 replaced by their modern equivalents. `RWDEPEND` is dropped; CMake tracks
 header dependencies natively.
+
+The four legacy switches can be decoupled from `CMAKE_BUILD_TYPE`: leave
+`RW_CDEBUG`/`RW_COPTIMIZE`/`RW_CPROFILE`/`RW_SMALLCODE` on `AUTO` for the
+table above, or set any of them to `ON`/`OFF` explicitly (e.g.
+`-DRW_COPTIMIZE=OFF` for an unoptimised release, or `-DRW_CDEBUG=ON` for
+debug flags under a Release build). In manual mode the other switches fall
+back to their make defaults, and the output directory plus the DLL `d` suffix
+follow the resolved switches. Details in `docs/CONFIGURATION.md`.
 
 `RW_OS` accepts `win` (implemented) and `mac`/`linux`/`sky`/`gcn`/`xbox`
 (stubs that fail configure with the file to fill in). `RW_TARGET` accepts
