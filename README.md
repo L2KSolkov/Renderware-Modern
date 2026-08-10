@@ -46,6 +46,10 @@ RWSDK/dll/<platform>/.../rwg<target>[d].dll   (RW_DLL=ON)
 Every `options.mak` variable maps to a CMake cache entry (see
 `RWSDK/cmake/RWOptions.cmake` for the exact definitions and defaults):
 
+The full per-flag reference - purpose, defaults, defines emitted, output
+layout, and configuration mapping - lives in
+[`docs/CONFIGURATION.md`](docs/CONFIGURATION.md).
+
 | CMake option | make var | Define emitted |
 |---|---|---|
 | `RW_DEBUG` | `RWDEBUG` | `RWDEBUG` |
