@@ -1,0 +1,42 @@
+rw_add_toolkit(rtpng DIR tool/png
+  SOURCES
+    zlib113/adler32.c
+    zlib113/compress.c
+    zlib113/gzio.c
+    zlib113/uncompr.c
+    zlib113/deflate.c
+    zlib113/trees.c
+    zlib113/zutil.c
+    zlib113/inflate.c
+    zlib113/infblock.c
+    zlib113/inftrees.c
+    zlib113/infcodes.c
+    zlib113/infutil.c
+    zlib113/inffast.c
+    zlib113/crc32.c
+    lpng1012/png.c
+    lpng1012/pngerror.c
+    lpng1012/pnggccrd.c
+    lpng1012/pngget.c
+    lpng1012/pngmem.c
+    lpng1012/pngpread.c
+    lpng1012/pngread.c
+    lpng1012/pngrio.c
+    lpng1012/pngrtran.c
+    lpng1012/pngrutil.c
+    lpng1012/pngset.c
+    lpng1012/pngtrans.c
+    lpng1012/pngvcrd.c
+    lpng1012/pngwio.c
+    lpng1012/pngwrite.c
+    lpng1012/pngwtran.c
+    lpng1012/pngwutil.c
+  EXTRA_DEFINES
+    PNG_USER_MEM_SUPPORTED
+    PNG_NO_CONSOLE_IO
+    PNG_NO_PROGRESSIVE_READ
+    PNG_NO_STDIO
+    PNG_NO_WRITE_tIME
+    RISCOS
+  EXTRA_INCLUDES "./zlib113" "./lpng1012")
+set(RW_TOOLKIT_LIBS_IN_DIR rtpng PARENT_SCOPE)
