@@ -9,6 +9,10 @@ RWSDK/build*/
 RWSDK/obj/
 RWSDK/dep/
 RWSDK/autodocs/
+examples/**/obj/
+examples/**/*.exe
+examples/**/*.ilk
+examples/**/*.pdb
 *.user
 *.suo
 *.sdf
