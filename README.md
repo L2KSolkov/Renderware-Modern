@@ -146,5 +146,6 @@ fields) that cannot link.
     `RWRETURN` without the `RWFUNCTION` entry macro that the `RWTRACE`
     machinery in `rpdbgerr.h` requires. This is an upstream source defect that
     the make build hits identically.
-- The legacy makefiles stay in-tree as the specification and historical
-  reference (`RWSDK/options.mak.sample` included).
+- The legacy GNU make files were removed once parity was demonstrated; git
+  history retains them as the specification. `RWSDK/options.mak.sample` stays
+  as the historical reference.
