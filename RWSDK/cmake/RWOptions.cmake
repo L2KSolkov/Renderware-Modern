@@ -100,9 +100,9 @@ set(RW_OS "win" CACHE STRING
 set_property(CACHE RW_OS PROPERTY STRINGS win mac linux sky gcn xbox)
 
 set(RW_TARGET "d3d9" CACHE STRING
-    "RWTARGET: d3d9 d3d8 opengl null implemented; the rest are stubs")
+    "RWTARGET: d3d9 d3d8 d3d11 opengl null implemented; the rest are stubs")
 set_property(CACHE RW_TARGET PROPERTY STRINGS
-    d3d9 d3d8 opengl null sky2 gcn xbox softras nullsky nullxbox nullgcn)
+    d3d9 d3d8 d3d11 opengl null sky2 gcn xbox softras nullsky nullxbox nullgcn)
 
 set(RW_PIPETYPE "p2" CACHE STRING
     "PIPETYPE: p2 is the only pipeline in the tree; generic is reserved")

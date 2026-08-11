@@ -100,7 +100,7 @@ if(CMAKE_RC_COMPILER)
             "/i${RW_SRC_ROOT}/dllsrc"
             "/dLANG_ENGLISH=0x09"
             "/dSUBLANG_ENGLISH_UK=0x02"
-            "/d$<$<BOOL:${RW_CDEBUG_ENABLED}>:_DEBUG:NDEBUG>"
+            "$<$<BOOL:${RW_CDEBUG_ENABLED}>:/d_DEBUG>$<$<NOT:$<BOOL:${RW_CDEBUG_ENABLED}>>:/dNDEBUG>"
             "/fo${_rc_out}"
             "${RW_SRC_ROOT}/dllsrc/rwgdll.rc"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
@@ -178,12 +178,12 @@ foreach(_lib IN LISTS _dlllibs)
   # exports (the VS2003-era linker the make system targeted did). WHOLEARCHIVE
   # makes every member available so the dlltool-style export-all .def links.
   # link.exe requires native (backslash) paths in this option, so build the
-  # archive path manually instead of using $<TARGET_FILE>.
-  get_target_property(_lib_srcdir "${_lib}" SOURCE_DIR)
+  # archive path manually instead of using $<TARGET_FILE>. The target's
+  # BINARY_DIR is correct in both the SDK-only and the root-superbuild
+  # layouts (the SDK's binary dir is <build>/RWSDK under the superbuild).
+  get_target_property(_lib_bdir "${_lib}" BINARY_DIR)
   get_target_property(_lib_outname "${_lib}" OUTPUT_NAME)
-  file(RELATIVE_PATH _lib_rel "${RW_SRC_ROOT}" "${_lib_srcdir}")
-  set(_wa_path
-      "${CMAKE_BINARY_DIR}/${_lib_rel}/$<CONFIG>/${_lib_outname}.lib")
+  set(_wa_path "${_lib_bdir}/$<CONFIG>/${_lib_outname}.lib")
   string(REPLACE "/" "\\" _wa_path "${_wa_path}")
   target_link_options(rwgdll PRIVATE "/WHOLEARCHIVE:${_wa_path}")
 endforeach()

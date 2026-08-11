@@ -140,6 +140,7 @@ typedef enum RwCoreDeviceSystemFn RwCoreDeviceSystemFn;
 #define rwDEVICE_SKY2    (6)
 #define rwDEVICE_SOFTRAS (7)
 #define rwDEVICE_XBOX    (8)
+#define rwDEVICE_D3D11   (9)
 
 #define rwDEVICE_NULLxxx  (0x100)
 #define rwDEVICE_NULLGCN  (rwDEVICE_NULLxxx | rwDEVICE_GCN)
