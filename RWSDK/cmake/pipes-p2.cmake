@@ -68,19 +68,4 @@ elseif(RW_TARGET STREQUAL "d3d9")
       "${RW_SRC_ROOT}/world/pipe/p2/d3d9/d3d9usage.c"
       "${RW_SRC_ROOT}/world/pipe/p2/d3d9/wrldpipe.c"
       "${RW_SRC_ROOT}/world/pipe/p2/d3d9/native.c")
-elseif(RW_TARGET STREQUAL "d3d11")
-  set(RW_PIPE_PS_CSRC
-      "${RW_SRC_ROOT}/src/pipe/p2/d3d11/im3dpipe.c"
-      "${RW_SRC_ROOT}/src/pipe/p2/d3d11/nodeD3D11SubmitNoLight.c")
-  set(RW_WORLD_PIPE_PS_CSRC
-      "${RW_SRC_ROOT}/world/pipe/p2/d3d11/D3D11lights.c"
-      "${RW_SRC_ROOT}/world/pipe/p2/d3d11/D3D11pipe.c"
-      "${RW_SRC_ROOT}/world/pipe/p2/d3d11/nodeD3D11AtomicAllInOne.c"
-      "${RW_SRC_ROOT}/world/pipe/p2/d3d11/nodeD3D11WorldSectorAllInOne.c"
-      "${RW_SRC_ROOT}/world/pipe/p2/d3d11/d3d11inputlayout.c"
-      "${RW_SRC_ROOT}/world/pipe/p2/d3d11/d3d11vertexshader.c"
-      "${RW_SRC_ROOT}/world/pipe/p2/d3d11/d3d11vertexshaderutils.c"
-      "${RW_SRC_ROOT}/world/pipe/p2/d3d11/d3d11usage.c"
-      "${RW_SRC_ROOT}/world/pipe/p2/d3d11/wrldpipe.c"
-      "${RW_SRC_ROOT}/world/pipe/p2/d3d11/native.c")
 endif()
