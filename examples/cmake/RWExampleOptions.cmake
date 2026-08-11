@@ -108,10 +108,19 @@ else()
 endif()
 
 ##------------------------------------------------------- compile flags
-set(_rw_ex_dbg "/Zi;/D_DEBUG;/UNDEBUG;/MTd")
-set(_rw_ex_prf "/Zi;/U_DEBUG;/DNDEBUG;/MT")
-set(_rw_ex_wst "/DNDEBUG;/EHsc;/Gh;/Gs;/Ob1;/Zi;/U_CRTDBG_MAP_ALLOC;/U_DEBUG;/MT")
-set(_rw_ex_rel "/U_DEBUG;/DNDEBUG;/MT")
+# The examples must use the same CRT as the SDK libraries they link. When the
+# SDK is built as a DLL (RW_DLL=ON) every static library is /MD, so the
+# examples are /MD too (the make system's "applications linking against the
+# DLL built libraries require the multithreaded DLL runtimes" rule).
+if(TARGET rwcore AND RW_DLL)
+  set(RW_EXAMPLES_RUNTIME "/MD")
+else()
+  set(RW_EXAMPLES_RUNTIME "/MT")
+endif()
+set(_rw_ex_dbg "/Zi;/D_DEBUG;/UNDEBUG;${RW_EXAMPLES_RUNTIME}d")
+set(_rw_ex_prf "/Zi;/U_DEBUG;/DNDEBUG;${RW_EXAMPLES_RUNTIME}")
+set(_rw_ex_wst "/DNDEBUG;/EHsc;/Gh;/Gs;/Ob1;/Zi;/U_CRTDBG_MAP_ALLOC;/U_DEBUG;${RW_EXAMPLES_RUNTIME}")
+set(_rw_ex_rel "/U_DEBUG;/DNDEBUG;${RW_EXAMPLES_RUNTIME}")
 set(_rw_ex_opt "/O2;/Ob2")
 set(_rw_ex_noopt "/Od;/Ob0;/Oy-")
 set(_rw_ex_optchoice

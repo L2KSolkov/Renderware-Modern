@@ -84,6 +84,12 @@ function(rw_add_example NAME)
   if(RW_EXAMPLES_SPLASH)
     target_link_libraries(${NAME} PRIVATE vfw32)
   endif()
+  # Under RW_DLL the driver libraries (d3d9.lib, d3dx9.lib, ...) are deferred
+  # to the amalgamated DLL link, so examples linking the static libs must add
+  # them explicitly.
+  if(TARGET rwcore AND RW_DLL AND RW_DLL_DRV_LIBS)
+    target_link_libraries(${NAME} PRIVATE ${RW_DLL_DRV_LIBS})
+  endif()
 
   # <demo>_<platform>[suffix].exe, e.g. camera_d3d9.exe / camera_d3d9d.exe
   set_target_properties(${NAME} PROPERTIES

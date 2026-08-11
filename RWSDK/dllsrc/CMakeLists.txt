@@ -173,6 +173,18 @@ set_target_properties(rwgdll PROPERTIES
   PREFIX "")
 target_link_options(rwgdll PRIVATE
   /dll /fixed:no /largeaddressaware /incremental:no)
+# Full PDB for the amalgamated DLL when debug info is enabled.
+if(RW_MANUAL_FLAGS)
+  if(RW_DEBUGINFO_ENABLED)
+    target_link_options(rwgdll PRIVATE
+      "/debug:full"
+      "/pdb:${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${_rwgdllname}.pdb")
+  endif()
+else()
+  target_link_options(rwgdll PRIVATE
+    "$<$<BOOL:${RW_DEBUGINFO_ENABLED}>:/debug:full>"
+    "$<$<BOOL:${RW_DEBUGINFO_ENABLED}>:/pdb:${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${_rwgdllname}.pdb>")
+endif()
 foreach(_lib IN LISTS _dlllibs)
   # Modern link.exe does not pull archive members merely to satisfy .def
   # exports (the VS2003-era linker the make system targeted did). WHOLEARCHIVE

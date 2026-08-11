@@ -219,7 +219,9 @@ set(RW_CPROFILE "AUTO" CACHE STRING
     "CPROFILE: profiling compile flags (/O2 /Zi, NDEBUG) and 'profile' output dir. AUTO = RelWithDebInfo config; ON/OFF overrides.")
 set(RW_SMALLCODE "AUTO" CACHE STRING
     "SMALLCODE: small-code compile flags (/O1 /Ob2) and /MD runtime. AUTO = MinSizeRel config; ON/OFF overrides.")
-foreach(_v IN ITEMS RW_CDEBUG RW_COPTIMIZE RW_CPROFILE RW_SMALLCODE)
+set(RW_DEBUGINFO "AUTO" CACHE STRING
+    "Emit debug info (/Zi on every compile, /debug:full PDB at link). AUTO = Debug config / debug modes; ON/OFF overrides.")
+foreach(_v IN ITEMS RW_CDEBUG RW_COPTIMIZE RW_CPROFILE RW_SMALLCODE RW_DEBUGINFO)
   set_property(CACHE ${_v} PROPERTY STRINGS AUTO ON OFF)
 endforeach()
 
@@ -244,6 +246,15 @@ if(RW_MANUAL_FLAGS)
   set(RW_CDEBUG_ENABLED OFF)
   set(RW_CPROFILE_ENABLED OFF)
   set(RW_SMALLCODE_ENABLED OFF)
+  if(RW_DEBUGINFO STREQUAL "ON")
+    set(RW_DEBUGINFO_ENABLED 1)
+  elseif(RW_DEBUGINFO STREQUAL "OFF")
+    set(RW_DEBUGINFO_ENABLED 0)
+  elseif(RW_CDEBUG STREQUAL "ON" OR RW_CPROFILE STREQUAL "ON" OR RW_MSWST)
+    set(RW_DEBUGINFO_ENABLED 1)
+  else()
+    set(RW_DEBUGINFO_ENABLED 0)
+  endif()
   if(RW_CDEBUG STREQUAL "ON")
     set(RW_CDEBUG_ENABLED ON)
   endif()
@@ -319,6 +330,18 @@ if(RW_MANUAL_FLAGS)
     list(APPEND RW_CONFIG_FLAGS "${_rw_rt}")
   endif()
 
+  # RW_DEBUGINFO: AUTO follows the debug modes, ON forces /Zi everywhere,
+  # OFF forces none.
+  if(RW_DEBUGINFO STREQUAL "ON")
+    list(APPEND RW_CONFIG_FLAGS "/Zi")
+  elseif(RW_DEBUGINFO STREQUAL "OFF")
+    # leave as-is (debug modes still carry their own /Zi)
+  else()
+    if(NOT RW_CDEBUG_ENABLED AND NOT RW_CPROFILE_ENABLED AND NOT RW_MSWST)
+      list(APPEND RW_CONFIG_FLAGS "/Zi")
+    endif()
+  endif()
+
   # output directory follows the resolved switches (makeopt precedence:
   # metrics -> debug -> profile -> mswst -> flat -> release)
   if(RW_METRICS)
@@ -337,6 +360,13 @@ if(RW_MANUAL_FLAGS)
 else()
   ## AUTO mode: original build-type mapping, unchanged
   set(RW_CDEBUG_ENABLED "$<CONFIG:Debug>")
+  if(RW_DEBUGINFO STREQUAL "ON")
+    set(RW_DEBUGINFO_ENABLED 1)
+  elseif(RW_DEBUGINFO STREQUAL "OFF")
+    set(RW_DEBUGINFO_ENABLED 0)
+  else()
+    set(RW_DEBUGINFO_ENABLED "$<CONFIG:Debug>")
+  endif()
   set(RW_RT_DBG "$<IF:$<BOOL:${RW_DLL}>,/MDd,/MTd>")
   set(RW_RT_REL "$<IF:$<BOOL:${RW_DLL}>,/MD,/MT>")
   if(RW_MSWST)
@@ -344,13 +374,15 @@ else()
         "$<$<CONFIG:Debug>:${RW_DBG_FLAGS};${RW_OPT_OFF_FLAGS};${RW_RT_DBG}>"
         "$<$<CONFIG:RelWithDebInfo>:${RW_PRF_FLAGS};${RW_RT_REL}>"
         "$<$<CONFIG:Release>:${RW_WST_FLAGS}>"
-        "$<$<CONFIG:MinSizeRel>:${RW_WST_FLAGS}>")
+        "$<$<CONFIG:MinSizeRel>:${RW_WST_FLAGS}>"
+        "$<$<BOOL:${RW_DEBUGINFO_ENABLED}>:/Zi>")
   else()
     set(RW_CONFIG_FLAGS
         "$<$<CONFIG:Debug>:${RW_DBG_FLAGS};${RW_OPT_OFF_FLAGS};${RW_RT_DBG}>"
         "$<$<CONFIG:RelWithDebInfo>:${RW_PRF_FLAGS};${RW_RT_REL}>"
         "$<$<CONFIG:MinSizeRel>:${RW_REL_FLAGS};${RW_OPT_SMALL_FLAGS};/MD>"
-        "$<$<CONFIG:Release>:${RW_REL_FLAGS};${RW_OPT_FULL_FLAGS};${RW_RT_REL}>")
+        "$<$<CONFIG:Release>:${RW_REL_FLAGS};${RW_OPT_FULL_FLAGS};${RW_RT_REL}>"
+        "$<$<BOOL:${RW_DEBUGINFO_ENABLED}>:/Zi>")
 endif()
 endif()
 
