@@ -410,23 +410,57 @@ UVAnimCopy(void *dstObject,
     dstMaterialExt = (RpUVAnimMaterialExtension *)
         RPUVANIMMATERIALGETDATA(dstObject);
 
-    /* COD FH's RenderWare build shallow-copies the material extension and
-     * retains each referenced animation. */
-    memcpy(dstMaterialExt, srcMaterialExt,
-           sizeof(RpUVAnimMaterialExtension));
-
+    /* Allocate and copy into allocated interpolators,
+     * incrementing anim references where necessary */
     {
-        size_t copyIndex;
+        size_t allocateIndex;
+        RwBool allocSuccess = TRUE;
 
-        for (copyIndex=0; copyIndex<RP_UVANIM_MAXSLOTS; ++copyIndex)
+        for (allocateIndex=0; allocateIndex<RP_UVANIM_MAXSLOTS; ++allocateIndex)
         {
-            RtAnimInterpolator *interp = dstMaterialExt->interp[copyIndex];
+            RtAnimInterpolator *interp = srcMaterialExt->interp[allocateIndex];
+            RtAnimInterpolator **dest = &dstMaterialExt->interp[allocateIndex];
 
             if (interp)
             {
                 RtAnimAnimation *anim = RtAnimInterpolatorGetCurrentAnim(interp);
-                RpUVAnimAddRef(anim);
+                *dest = RtAnimInterpolatorCreate(
+                            RtAnimAnimationGetNumNodes(anim),
+                            anim->interpInfo->interpKeyFrameSize
+                        );
+                if (*dest)
+                {
+                    RtAnimInterpolatorCopy(*dest, interp);
+                    RpUVAnimAddRef(anim);
+                }
+                else
+                {
+                    allocSuccess = FALSE;
+                    break;
+                }
             }
+            else
+            {
+                *dest = (RtAnimInterpolator *)NULL;
+            }
+        }
+
+        /* Cleanup on failure */
+        if (!allocSuccess)
+        {
+            size_t cleanupIndex;
+            for (cleanupIndex=0; cleanupIndex<allocateIndex; ++cleanupIndex)
+            {
+                RtAnimInterpolator **dest = &dstMaterialExt->interp[cleanupIndex];
+
+                if (*dest)
+                {
+                    RtAnimAnimation *anim = RtAnimInterpolatorGetCurrentAnim(*dest);
+                    RpUVAnimDestroy(anim);
+                    RtAnimInterpolatorDestroy(*dest);
+                }
+            }
+            RWRETURN((void *)NULL);
         }
     }
 
